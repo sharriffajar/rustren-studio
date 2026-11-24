@@ -1,0 +1,8 @@
+{
+  "name": "Rustren Studio",
+  "description": "Local 2.5D declarative video editor studio powered by the Rustren v1.1 scene engine, with a BYOK AI Director panel for automated scene generation and direct-to-storage MP4/WebM/PNG export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
