@@ -402,7 +402,8 @@ export async function exportMp4ViaServer(
 export async function exportWebmLocally(
   scene: RustrenScene,
   onProgress?: (p: ExportProgress) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  customFilename?: string
 ): Promise<{ filename: string; sizeBytes: number; method: 'picker' | 'download' }> {
   if (typeof MediaRecorder === 'undefined') {
     throw new Error('Browser does not support MediaRecorder API for local WebM export.');
@@ -463,7 +464,9 @@ export async function exportWebmLocally(
 
   recorder.stop();
   const webmBlob = await stopped;
-  const filename = `rustren_local_${scene.canvas.width}x${scene.canvas.height}.webm`;
+  const filename = customFilename
+    ? (customFilename.endsWith('.webm') ? customFilename : `${customFilename}.webm`)
+    : `rustren_local_${scene.canvas.width}x${scene.canvas.height}.webm`;
   const method = await saveBlobToStorage(webmBlob, filename, 'video/webm', 'webm');
 
   onProgress?.({

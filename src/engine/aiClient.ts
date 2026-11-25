@@ -81,6 +81,7 @@ Report in "summary" how the shot structure, pacing and palette were reproduced.
 Authoring quality rules:
 - Always ensure high text contrast (>= 4.5:1) against background/cards.
 - Keep all coordinates inside canvas bounds.
+- For centered text, always set anchor: "center", text_align: "center", x: canvas.width / 2, and max_width (e.g., Math.round(canvas.width * 0.85)) so text stays optically centered.
 - Return ONLY raw valid JSON without markdown code fences.`;
 
 export interface ScenePatch {

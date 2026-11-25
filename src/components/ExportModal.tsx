@@ -116,7 +116,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         const secs = res.renderSecs ? ` · ${res.renderSecs.toFixed(1)}s` : '';
         setDoneMessage(`MP4 saved (${res.filename} · ${kb} KB${secs}) via Rustren API.`);
       } else {
-        const res = await exportWebmLocally(scene, setProgress, controller.signal);
+        const res = await exportWebmLocally(scene, setProgress, controller.signal, filename);
         const kb = (res.sizeBytes / 1024).toFixed(1);
         setDoneMessage(`WebM saved (${res.filename} · ${kb} KB) locally.`);
       }
@@ -372,7 +372,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               {isExporting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Merender {format.toUpperCase()}...</span>
+                  <span>Rendering {format.toUpperCase()}...</span>
                 </>
               ) : (
                 <>

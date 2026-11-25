@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronUp,
@@ -136,6 +136,14 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
   const [editingNoteText, setEditingNoteText] = useState('');
   const [testBusy, setTestBusy] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const chatFeedRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = chatFeedRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages.length, isRunning]);
 
   const handleTestConnection = async () => {
     setTestBusy(true);
@@ -454,7 +462,7 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
       </div>
 
       {/* Chat / Command Feed */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 pb-6 space-y-3">
+      <div ref={chatFeedRef} className="flex-1 min-h-0 overflow-y-auto p-3 pb-6 space-y-3">
         {messages.length === 0 ? (
           <div className="space-y-3 py-2">
             <div className="text-xs text-[#A1A1AA] leading-relaxed">

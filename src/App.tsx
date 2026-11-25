@@ -633,6 +633,9 @@ export default function App() {
       const nextScene = data.scene as RustrenScene;
       commitScene(nextScene);
       setActivePresetId('custom');
+      if (mode === 'new') {
+        setProjectName('AI Generated Scene');
+      }
       setCurrentTime(Math.min(1.0, (nextScene.canvas.duration_secs || 5) / 2));
       setSelectedLayerIndex(nextScene.layers.length > 0 ? 0 : null);
 
@@ -780,7 +783,7 @@ export default function App() {
               { ...note, id: `note_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` },
             ]);
             setRightTab('ai');
-            showToast('Frame note pinned. Click "Apply Notes with AI" when ready.');
+            showToast('Frame note pinned. Click "Apply with AI" when ready.');
           }}
           onDeleteFrameNote={(id) => {
             setFrameNotes((prev) => prev.filter((n) => n.id !== id));
