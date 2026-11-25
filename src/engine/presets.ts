@@ -10,6 +10,39 @@ export interface ScenePreset {
 
 export const SCENE_PRESETS: ScenePreset[] = [
   {
+    id: 'blank-16-9',
+    name: 'Blank Canvas (16:9)',
+    aspect: '16:9 · 5s',
+    description: 'Empty 1280×720 widescreen canvas for starting a new project from scratch.',
+    scene: {
+      schema_version: '1.1',
+      canvas: { width: 1280, height: 720, fps: 30, duration_secs: 5.0, background: '#09090D' },
+      layers: [],
+    },
+  },
+  {
+    id: 'blank-9-16',
+    name: 'Blank Canvas (9:16)',
+    aspect: '9:16 · 5s',
+    description: 'Empty 1080×1920 vertical canvas for Reels, Shorts, and TikTok.',
+    scene: {
+      schema_version: '1.1',
+      canvas: { width: 1080, height: 1920, fps: 30, duration_secs: 5.0, background: '#09090D' },
+      layers: [],
+    },
+  },
+  {
+    id: 'blank-1-1',
+    name: 'Blank Canvas (1:1)',
+    aspect: '1:1 · 5s',
+    description: 'Empty 1080×1080 square canvas for social posts and posters.',
+    scene: {
+      schema_version: '1.1',
+      canvas: { width: 1080, height: 1080, fps: 30, duration_secs: 5.0, background: '#09090D' },
+      layers: [],
+    },
+  },
+  {
     id: 'rustren-launch',
     name: 'Rustren Product Reveal',
     aspect: '16:9 · 6s',
