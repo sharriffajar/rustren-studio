@@ -15,6 +15,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { testAiConnection } from '../engine/aiClient';
 import type {
   AiChatMessage,
   AiProviderConfig,
@@ -133,6 +134,21 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
 }) => {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteText, setEditingNoteText] = useState('');
+  const [testBusy, setTestBusy] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const handleTestConnection = async () => {
+    setTestBusy(true);
+    setTestResult(null);
+    const res = await testAiConnection({
+      provider: config.provider,
+      apiKey: config.apiKey,
+      model: config.model,
+      baseUrl: config.baseUrl,
+    });
+    setTestResult({ ok: res.ok, message: res.message });
+    setTestBusy(false);
+  };
   const [prompt, setPrompt] = useState('');
   const [mode, setMode] = useState<'edit' | 'new'>('edit');
   const [showKey, setShowKey] = useState(false);
@@ -364,15 +380,39 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
             )}
 
             {config.provider !== 'studio_gemini' && (
-              <label className="flex items-center gap-2 text-[11px] text-[#A1A1AA] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.rememberKey}
-                  onChange={(e) => onUpdateConfig({ rememberKey: e.target.checked })}
-                  className="accent-[#F97316] rounded"
-                />
-                <span>Remember API key in browser</span>
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex items-center gap-2 text-[11px] text-[#A1A1AA] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={config.rememberKey}
+                    onChange={(e) => onUpdateConfig({ rememberKey: e.target.checked })}
+                    className="accent-[#F97316] rounded"
+                  />
+                  <span>Remember API key</span>
+                </label>
+
+                <button
+                  type="button"
+                  disabled={testBusy}
+                  onClick={() => void handleTestConnection()}
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-[#1D1F2B] hover:bg-[#272A3A] border border-[#343648] text-[11px] font-medium text-[#E4E4E7] disabled:opacity-50 whitespace-nowrap"
+                >
+                  {testBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-[#F97316]" />}
+                  <span>{testBusy ? 'Testing...' : 'Test Connection'}</span>
+                </button>
+              </div>
+            )}
+
+            {testResult && (
+              <div
+                className={`text-[11px] rounded px-2 py-1.5 border leading-snug ${
+                  testResult.ok
+                    ? 'bg-[#064E3B]/30 border-[#10B981]/50 text-[#6EE7B7]'
+                    : 'bg-[#7F1D1D]/25 border-[#EF4444]/40 text-[#FCA5A5]'
+                }`}
+              >
+                {testResult.message}
+              </div>
             )}
 
             {/* Auto-Render Automation Pipeline Toggle */}

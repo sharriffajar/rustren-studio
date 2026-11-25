@@ -229,3 +229,97 @@ export async function runAiDirectorCommand(params: {
     scene: parsed.scene,
   };
 }
+
+export async function testAiConnection(params: {
+  provider: AiProviderId;
+  apiKey: string;
+  model: string;
+  baseUrl?: string;
+}): Promise<{ ok: boolean; latencyMs: number; message: string }> {
+  const { provider, apiKey, model, baseUrl } = params;
+  const t0 = performance.now();
+
+  try {
+    if (provider === 'studio_gemini') {
+      const resp = await fetch('/api/health');
+      const latencyMs = Math.round(performance.now() - t0);
+      return resp.ok
+        ? { ok: true, latencyMs, message: `Connected (${latencyMs}ms)` }
+        : { ok: false, latencyMs, message: `Server returned HTTP ${resp.status}` };
+    }
+
+    if (provider === 'gemini_byok') {
+      const m = model || 'gemini-2.5-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}?key=${encodeURIComponent(apiKey.trim())}`;
+      const resp = await fetch(url);
+      const latencyMs = Math.round(performance.now() - t0);
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        return { ok: false, latencyMs, message: data?.error?.message || `HTTP ${resp.status}` };
+      }
+      return { ok: true, latencyMs, message: `Connected · ${m} (${latencyMs}ms)` };
+    }
+
+    if (provider === 'anthropic') {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey.trim(),
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: model || 'claude-sonnet-4-20250514',
+          max_tokens: 4,
+          messages: [{ role: 'user', content: 'ping' }],
+        }),
+      });
+      const latencyMs = Math.round(performance.now() - t0);
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        return { ok: false, latencyMs, message: data?.error?.message || `HTTP ${resp.status}` };
+      }
+      return { ok: true, latencyMs, message: `Connected (${latencyMs}ms)` };
+    }
+
+    // OpenAI / OpenRouter / Custom OpenAI-compatible
+    let endpoint = 'https://api.openai.com/v1/chat/completions';
+    if (provider === 'openrouter') {
+      endpoint = 'https://openrouter.ai/api/v1/chat/completions';
+    } else if (provider === 'custom') {
+      const cleanBase = (baseUrl || 'http://localhost:11434/v1').replace(/\/+$/, '');
+      endpoint = cleanBase.endsWith('/chat/completions') ? cleanBase : `${cleanBase}/chat/completions`;
+    }
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (apiKey.trim()) {
+      headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+    }
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: model || 'gpt-4o-mini',
+        max_tokens: 4,
+        messages: [{ role: 'user', content: 'ping' }],
+      }),
+    });
+    const latencyMs = Math.round(performance.now() - t0);
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      return { ok: false, latencyMs, message: data?.error?.message || `HTTP ${resp.status}` };
+    }
+    return { ok: true, latencyMs, message: `Connected (${latencyMs}ms)` };
+  } catch (err) {
+    const latencyMs = Math.round(performance.now() - t0);
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/failed to fetch|networkerror|load failed/i.test(msg)) {
+      return {
+        ok: false,
+        latencyMs,
+        message: 'Network / CORS blocked — this endpoint does not allow direct browser requests (missing Access-Control-Allow-Origin).',
+      };
+    }
+    return { ok: false, latencyMs, message: msg };
+  }
+}
