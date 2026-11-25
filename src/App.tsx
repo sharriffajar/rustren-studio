@@ -592,8 +592,9 @@ export default function App() {
         }
         showToast('Auto-Render complete and saved locally.');
       } else {
-        showToast('Scene diperbarui oleh AI Director.');
+        showToast('Scene updated by AI Director.');
       }
+      return true;
     } catch (err) {
       setAiMessages((prev) => [
         ...prev,
@@ -604,6 +605,7 @@ export default function App() {
           timestamp: Date.now(),
         },
       ]);
+      return false;
     } finally {
       setAiRunning(false);
     }
@@ -789,8 +791,32 @@ export default function App() {
               onDeleteFrameNote={(id) => {
                 setFrameNotes((prev) => prev.filter((n) => n.id !== id));
               }}
+              onUpdateFrameNote={(id, note) => {
+                setFrameNotes((prev) => prev.map((n) => (n.id === id ? { ...n, note } : n)));
+              }}
+              onCopyFrameNotes={() => {
+                const payload = JSON.stringify(
+                  {
+                    canvas: { width: scene.canvas.width, height: scene.canvas.height, fps: scene.canvas.fps },
+                    notes: frameNotes.map((n, idx) => ({
+                      index: idx + 1,
+                      time_sec: n.timeSec,
+                      x: n.x,
+                      y: n.y,
+                      ...(n.w && n.h ? { w: n.w, h: n.h } : {}),
+                      note: n.note,
+                    })),
+                  },
+                  null,
+                  2
+                );
+                navigator.clipboard
+                  .writeText(payload)
+                  .then(() => showToast('Frame notes JSON copied to clipboard.'))
+                  .catch(() => showToast('Failed to copy frame notes JSON.'));
+              }}
               onClearFrameNotes={() => setFrameNotes([])}
-              onApplyFrameNotes={() => {
+              onApplyFrameNotes={async () => {
                 if (frameNotes.length === 0) return;
                 const lines = frameNotes.map((n, i) => {
                   const region = n.w && n.h ? `box (${n.x},${n.y} ${n.w}x${n.h})` : `point (${n.x},${n.y})`;
@@ -820,8 +846,10 @@ export default function App() {
                 } catch {
                   // proceed without snapshot if canvas taint occurs
                 }
-                void handleSendAiCommand(prompt, 'edit', refs);
-                setFrameNotes([]);
+                const ok = await handleSendAiCommand(prompt, 'edit', refs);
+                if (ok) {
+                  setFrameNotes([]);
+                }
               }}
             />
           ) : (

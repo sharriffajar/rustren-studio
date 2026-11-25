@@ -393,6 +393,13 @@ export const StageViewport: React.FC<StageViewportProps> = ({
             className={`w-full h-full block ${annotateMode ? 'cursor-cell' : 'cursor-crosshair'}`}
           />
 
+          {/* Annotate Mode Hint Pill */}
+          {annotateMode && !pendingNote && (
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-[#09090D]/90 border border-[#F97316]/60 text-[#FDBA74] text-[11px] font-medium px-3 py-1 rounded-full shadow-lg whitespace-nowrap">
+              Annotate mode: Click to pin or drag a box on the canvas
+            </div>
+          )}
+
           {/* True Rustren Engine Preview Overlay */}
           {rustrenPreviewUrl && (
             <div className="absolute inset-0 z-20 pointer-events-none">
@@ -457,7 +464,7 @@ export const StageViewport: React.FC<StageViewportProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <div className="-translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-[#F97316] text-[#09090D] text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                  <div className="-translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-[#F97316] text-[#09090D] text-[10px] font-bold pl-2 pr-1 py-0.5 rounded-full shadow-lg whitespace-nowrap">
                     <span>#{idx + 1}</span>
                     <button
                       type="button"
@@ -466,9 +473,9 @@ export const StageViewport: React.FC<StageViewportProps> = ({
                         onDeleteFrameNote(n.id);
                       }}
                       aria-label={`Delete note ${idx + 1}`}
-                      className="hover:text-white"
+                      className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-black/25 hover:text-white transition-colors"
                     >
-                      <X className="w-2.5 h-2.5" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 )}
@@ -476,17 +483,24 @@ export const StageViewport: React.FC<StageViewportProps> = ({
             );
           })}
 
-          {/* Pending Note Popover */}
-          {pendingNote && (
-            <form
-              onSubmit={handleCommitNote}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute z-30 bg-[#14151C] border border-[#F97316]/70 rounded-lg p-2.5 shadow-2xl w-64 space-y-2"
-              style={{
-                left: `${Math.min(72, (pendingNote.x / scene.canvas.width) * 100)}%`,
-                top: `${Math.min(72, (pendingNote.y / scene.canvas.height) * 100)}%`,
-              }}
-            >
+          {/* Pending Note Popover (auto-flips near right/bottom edges) */}
+          {pendingNote && (() => {
+            const xPct = (pendingNote.x / scene.canvas.width) * 100;
+            const yPct = (pendingNote.y / scene.canvas.height) * 100;
+            const flipLeft = xPct > 58;
+            const flipUp = yPct > 62;
+            return (
+              <form
+                onSubmit={handleCommitNote}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute z-30 bg-[#14151C] border border-[#F97316]/70 rounded-lg p-2.5 shadow-2xl w-64 space-y-2"
+                style={{
+                  left: flipLeft ? undefined : `${Math.max(2, Math.min(96, xPct))}%`,
+                  right: flipLeft ? `${Math.max(2, Math.min(96, 100 - xPct))}%` : undefined,
+                  top: flipUp ? undefined : `${Math.max(2, Math.min(96, yPct))}%`,
+                  bottom: flipUp ? `${Math.max(2, Math.min(96, 100 - yPct))}%` : undefined,
+                }}
+              >
               <div className="text-[10px] font-mono text-[#FDBA74] flex items-center justify-between">
                 <span>
                   Note @ t={currentTime.toFixed(2)}s ({pendingNote.x}, {pendingNote.y}
@@ -518,7 +532,8 @@ export const StageViewport: React.FC<StageViewportProps> = ({
                 </button>
               </div>
             </form>
-          )}
+            );
+          })()}
         </div>
       </div>
 

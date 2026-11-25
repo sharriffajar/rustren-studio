@@ -46,6 +46,8 @@ interface AiDirectorPanelProps {
   frameNotes: FrameNote[];
   onSeekToTime: (t: number) => void;
   onDeleteFrameNote: (id: string) => void;
+  onUpdateFrameNote: (id: string, note: string) => void;
+  onCopyFrameNotes: () => void;
   onClearFrameNotes: () => void;
   onApplyFrameNotes: () => void;
 }
@@ -124,9 +126,13 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
   frameNotes,
   onSeekToTime,
   onDeleteFrameNote,
+  onUpdateFrameNote,
+  onCopyFrameNotes,
   onClearFrameNotes,
   onApplyFrameNotes,
 }) => {
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState('');
   const [prompt, setPrompt] = useState('');
   const [mode, setMode] = useState<'edit' | 'new'>('edit');
   const [showKey, setShowKey] = useState(false);
@@ -498,11 +504,19 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
 
         {frameNotes.length > 0 && (
           <div className="rounded border border-[#F97316]/40 bg-[#171311] p-2 space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-semibold tracking-wide text-[#FDBA74]">
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-[10px] font-semibold tracking-wide text-[#FDBA74] whitespace-nowrap">
                 FRAME NOTES ({frameNotes.length})
               </span>
               <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={onCopyFrameNotes}
+                  title="Copy frame notes as JSON for external agents/CLI"
+                  className="text-[10px] text-[#A1A1AA] hover:text-white px-1.5 py-0.5 rounded bg-[#22232F] border border-[#343648]"
+                >
+                  Copy JSON
+                </button>
                 <button
                   type="button"
                   onClick={onClearFrameNotes}
@@ -514,36 +528,85 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
                   type="button"
                   disabled={isRunning}
                   onClick={onApplyFrameNotes}
-                  className="px-2 py-0.5 rounded bg-[#F97316] hover:bg-[#FB923C] text-[#09090D] text-[10px] font-bold disabled:opacity-40"
+                  className="px-2 py-0.5 rounded bg-[#F97316] hover:bg-[#FB923C] text-[#09090D] text-[10px] font-bold disabled:opacity-40 whitespace-nowrap"
                 >
-                  Apply Notes with AI
+                  Apply with AI
                 </button>
               </div>
             </div>
-            <div className="max-h-24 overflow-y-auto space-y-1">
+            <div className="max-h-28 overflow-y-auto space-y-1">
               {frameNotes.map((n, idx) => (
                 <div
                   key={n.id}
                   className="flex items-start justify-between gap-1.5 text-[11px] bg-[#0F1016] border border-[#272834] rounded px-1.5 py-1"
                 >
-                  <button
-                    type="button"
-                    onClick={() => onSeekToTime(n.timeSec)}
-                    className="text-left min-w-0 flex-1 hover:text-white text-[#D4D4D8]"
-                  >
-                    <span className="font-mono text-[10px] text-[#F97316] mr-1">
-                      #{idx + 1} @{n.timeSec.toFixed(2)}s
-                    </span>
-                    <span className="break-words">{n.note}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteFrameNote(n.id)}
-                    aria-label={`Remove frame note ${idx + 1}`}
-                    className="text-[#71717A] hover:text-[#FCA5A5] shrink-0"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  {editingNoteId === n.id ? (
+                    <form
+                      className="flex-1 flex items-center gap-1"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (editingNoteText.trim()) {
+                          onUpdateFrameNote(n.id, editingNoteText.trim());
+                        }
+                        setEditingNoteId(null);
+                      }}
+                    >
+                      <input
+                        type="text"
+                        autoFocus
+                        value={editingNoteText}
+                        onChange={(e) => setEditingNoteText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') setEditingNoteId(null);
+                        }}
+                        className="flex-1 min-w-0 bg-[#181924] border border-[#F97316] rounded px-1.5 py-0.5 text-[11px] text-white focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-[#F97316] text-[#09090D] font-bold"
+                      >
+                        Save
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onSeekToTime(n.timeSec)}
+                      onDoubleClick={() => {
+                        setEditingNoteId(n.id);
+                        setEditingNoteText(n.note);
+                      }}
+                      title="Click to seek · Double-click to edit"
+                      className="text-left min-w-0 flex-1 hover:text-white text-[#D4D4D8]"
+                    >
+                      <span className="font-mono text-[10px] text-[#F97316] mr-1">
+                        #{idx + 1} @{n.timeSec.toFixed(2)}s
+                      </span>
+                      <span className="break-words">{n.note}</span>
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {editingNoteId !== n.id && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingNoteId(n.id);
+                          setEditingNoteText(n.note);
+                        }}
+                        className="text-[10px] text-[#71717A] hover:text-[#FDBA74]"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onDeleteFrameNote(n.id)}
+                      aria-label={`Remove frame note ${idx + 1}`}
+                      className="text-[#71717A] hover:text-[#FCA5A5] p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
