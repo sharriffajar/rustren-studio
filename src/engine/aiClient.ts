@@ -3,7 +3,23 @@ import { formatVideoAnalysisForPrompt, type VideoForensics } from './videoAnalyz
 
 const RUSTREN_AI_SYSTEM_PROMPT = `You are Rustren Studio AI Director — an expert motion designer who writes valid Rustren v1.1 declarative JSON video scenes.
 
-Respond ONLY with a valid JSON object matching this exact structure (no markdown prose outside JSON):
+Respond ONLY with a valid JSON object (no markdown prose outside JSON).
+
+For SMALL / TARGETED edits in Edit Scene mode (e.g., changing duration, colors, text, position, removing/updating 1-3 layers), prefer the FAST PATCH format (much faster, fewer tokens):
+{
+  "summary": "Brief concise explanation (1-2 sentences, matching user's language).",
+  "patch": {
+    "canvas": { "duration_secs": 2.0 },
+    "update_layers": [
+      { "index": 0, "changes": { "color": "#F97316", "font_size": 72 } }
+    ],
+    "remove_layers": [2],
+    "add_layers": [ ... ]
+  }
+}
+(All fields inside "patch" are optional; omit unchanged fields.)
+
+For NEW scenes or MAJOR layout redesigns (e.g., converting 16:9 to 9:16), return the FULL scene format:
 {
   "summary": "Brief concise explanation (1-2 sentences, matching user's language) of what was created or changed.",
   "scene": {
@@ -67,7 +83,53 @@ Authoring quality rules:
 - Keep all coordinates inside canvas bounds.
 - Return ONLY raw valid JSON without markdown code fences.`;
 
-function extractJsonObject(raw: string): { summary?: string; scene: RustrenScene } {
+export interface ScenePatch {
+  canvas?: Partial<RustrenScene['canvas']>;
+  update_layers?: Array<{ index?: number; name?: string; changes: Record<string, unknown> }>;
+  remove_layers?: number[];
+  add_layers?: RustrenScene['layers'];
+}
+
+export function applyScenePatch(baseScene: RustrenScene, patch: ScenePatch): RustrenScene {
+  const next: RustrenScene = JSON.parse(JSON.stringify(baseScene));
+  if (patch.canvas && typeof patch.canvas === 'object') {
+    next.canvas = { ...next.canvas, ...patch.canvas };
+  }
+  if (Array.isArray(patch.update_layers)) {
+    for (const upd of patch.update_layers) {
+      if (!upd || !upd.changes || typeof upd.changes !== 'object') continue;
+      let idx = typeof upd.index === 'number' ? upd.index : -1;
+      if (idx < 0 && upd.name) {
+        idx = next.layers.findIndex((l) => l.name === upd.name || l.id === upd.name);
+      }
+      if (idx >= 0 && idx < next.layers.length) {
+        next.layers[idx] = { ...next.layers[idx], ...upd.changes } as RustrenScene['layers'][number];
+      }
+    }
+  }
+  if (Array.isArray(patch.remove_layers) && patch.remove_layers.length > 0) {
+    const toRemove = new Set(patch.remove_layers);
+    next.layers = next.layers.filter((_, i) => !toRemove.has(i));
+  }
+  if (Array.isArray(patch.add_layers) && patch.add_layers.length > 0) {
+    next.layers.push(...patch.add_layers);
+  }
+  // Auto-clamp layer end_sec if canvas duration was shortened
+  if (patch.canvas?.duration_secs !== undefined) {
+    const dur = next.canvas.duration_secs;
+    for (const layer of next.layers) {
+      if (layer.end_sec !== undefined && layer.end_sec > dur) {
+        layer.end_sec = dur;
+      }
+    }
+  }
+  return next;
+}
+
+function extractJsonObject(
+  raw: string,
+  currentScene?: RustrenScene
+): { summary?: string; scene: RustrenScene } {
   // Strip <think>...</think> reasoning blocks emitted by reasoning models (e.g. Nemotron/DeepSeek)
   const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
@@ -82,6 +144,12 @@ function extractJsonObject(raw: string): { summary?: string; scene: RustrenScene
       }
     };
     const parsed = parseCandidate(s);
+    if (parsed && parsed.patch && currentScene) {
+      return {
+        summary: parsed.summary || 'Scene updated by AI.',
+        scene: applyScenePatch(currentScene, parsed.patch as ScenePatch),
+      };
+    }
     if (parsed && parsed.scene && parsed.scene.canvas && Array.isArray(parsed.scene.layers)) {
       return parsed;
     }
@@ -261,7 +329,7 @@ export async function runAiDirectorCommand(params: {
     rawText = data?.choices?.[0]?.message?.content || '';
   }
 
-  const parsed = extractJsonObject(rawText);
+  const parsed = extractJsonObject(rawText, currentScene);
   return {
     summary: parsed.summary || 'Scene updated by AI.',
     scene: parsed.scene,
