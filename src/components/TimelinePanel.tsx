@@ -129,7 +129,7 @@ export const TimelinePanel: React.FC<TimelinePanelProps> = ({
             <button
               type="button"
               onClick={() => setZoom((z) => Math.max(1, Number((z - 0.5).toFixed(1))))}
-              aria-label="Perkecil zoom timeline"
+              aria-label="Zoom out timeline"
               className="p-0.5 text-[#8B8B96] hover:text-white"
             >
               <ZoomOut className="w-3 h-3" />
@@ -140,7 +140,7 @@ export const TimelinePanel: React.FC<TimelinePanelProps> = ({
             <button
               type="button"
               onClick={() => setZoom((z) => Math.min(3, Number((z + 0.5).toFixed(1))))}
-              aria-label="Perbesar zoom timeline"
+              aria-label="Zoom in timeline"
               className="p-0.5 text-[#8B8B96] hover:text-white"
             >
               <ZoomIn className="w-3 h-3" />
@@ -285,7 +285,7 @@ export const TimelinePanel: React.FC<TimelinePanelProps> = ({
                             onSelectLayer(idx);
                             onSeek(kt);
                           }}
-                          aria-label={`Keyframe ${label} at ${kt.toFixed(2)} detik`}
+                          aria-label={`Keyframe ${label} at ${kt.toFixed(2)}s`}
                           title={`Keyframe @ ${kt.toFixed(2)}s`}
                           className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-[#FACC15] hover:scale-125 transition-transform text-[11px] leading-none z-10 cursor-pointer"
                           style={{ left: `${clampedPct}%` }}

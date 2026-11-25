@@ -282,7 +282,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                         {animCount > 0 && (
                           <span
                             className="font-mono text-[10px] text-[#FACC15] tabular-nums shrink-0"
-                            title={`${animCount} animasi`}
+                            title={`${animCount} animation${animCount === 1 ? '' : 's'}`}
                           >
                             ◆{animCount}
                           </span>
@@ -296,8 +296,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                           type="button"
                           onClick={() => onMoveLayer(idx, -1)}
                           disabled={idx === 0}
-                          aria-label={`Pindah ${label} ke bawah`}
-                          title="Send ke belakang (z-order)"
+                          aria-label={`Move ${label} down`}
+                          title="Send backward (z-order)"
                           className="p-1 text-[#A1A1AA] hover:text-white disabled:opacity-30"
                         >
                           <ArrowUp className="w-3 h-3" />
@@ -306,8 +306,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                           type="button"
                           onClick={() => onMoveLayer(idx, 1)}
                           disabled={idx === scene.layers.length - 1}
-                          aria-label={`Pindah ${label} ke atas`}
-                          title="Majukan ke depan (z-order)"
+                          aria-label={`Move ${label} up`}
+                          title="Bring forward (z-order)"
                           className="p-1 text-[#A1A1AA] hover:text-white disabled:opacity-30"
                         >
                           <ArrowDown className="w-3 h-3" />
@@ -315,8 +315,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                         <button
                           type="button"
                           onClick={() => onDuplicateLayer(idx)}
-                          aria-label={`Duplikat ${label}`}
-                          title="Duplikat layer"
+                          aria-label={`Duplicate ${label}`}
+                          title="Duplicate layer"
                           className="p-1 text-[#A1A1AA] hover:text-white"
                         >
                           <Copy className="w-3 h-3" />
@@ -359,7 +359,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             </div>
           )}
           <textarea
-            aria-label="Editor kode JSON Rustren"
+            aria-label="Rustren JSON code editor"
             value={jsonDraft}
             onChange={(e) => setJsonDraft(e.target.value)}
             spellCheck={false}

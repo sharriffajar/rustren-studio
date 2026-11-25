@@ -124,7 +124,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               ? 'border-[#D97706]/50 bg-[#D97706]/10 text-[#FBBF24] hover:bg-[#D97706]/20'
               : 'border-[#272834] bg-[#171820] text-[#A1A1AA] hover:text-white'
           }`}
-          title="Periksa validasi & lint scene Rustren"
+          title="Check Rustren scene validation & lint"
         >
           {lintCount > 0 ? (
             <>

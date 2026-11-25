@@ -441,7 +441,7 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
                 <div className="flex items-center gap-2 pl-5">
                   <span className="text-[10px] text-[#8B8B96]">Format:</span>
                   <select
-                    aria-label="Format auto-render"
+                    aria-label="Auto-render format"
                     value={config.autoRenderFormat}
                     onChange={(e) =>
                       onUpdateConfig({

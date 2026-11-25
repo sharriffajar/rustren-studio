@@ -209,7 +209,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         </div>
         <input
           type="text"
-          aria-label="Nama layer"
+          aria-label="Layer name"
           value={layer.name || ''}
           placeholder={`${layer.type} #${selectedLayerIndex + 1}`}
           onChange={(e) => update({ name: e.target.value })}
@@ -499,7 +499,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   </select>
 
                   <select
-                    aria-label="Easing animasi"
+                    aria-label="Animation easing"
                     value={anim.easing || 'ease_out'}
                     onChange={(e) => handleUpdateAnim(aIdx, { easing: e.target.value as Easing })}
                     className="flex-1 bg-[#0F1016] border border-[#2C2D39] rounded px-1.5 py-0.5 text-[11px] text-[#E4E4E7]"

@@ -161,7 +161,7 @@ function createNewLayer(type: Layer['type'], scene: RustrenScene): Layer {
     case 'image':
       return {
         type: 'image',
-        name: `Gambar #${idx}`,
+        name: `Image #${idx}`,
         x: cx,
         y: cy,
         width: 420,

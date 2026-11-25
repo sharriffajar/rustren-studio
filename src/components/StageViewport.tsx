@@ -591,8 +591,8 @@ export const StageViewport: React.FC<StageViewportProps> = ({
           <button
             type="button"
             onClick={() => onSeek(duration)}
-            aria-label="Ke akhir"
-            title="Ke akhir"
+            aria-label="Jump to end"
+            title="Jump to end"
             className="p-1.5 rounded text-[#A1A1AA] hover:text-white hover:bg-[#23242F] transition-colors"
           >
             <SkipForward className="w-4 h-4" />
