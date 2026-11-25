@@ -230,18 +230,30 @@ export async function runAiDirectorCommand(params: {
     for (const ref of references) {
       content.push({ type: 'image_url', image_url: { url: ref.dataUrl } });
     }
-    const resp = await fetch(endpoint, {
+    const baseBody: Record<string, unknown> = {
+      model: model || 'gpt-4o-mini',
+      temperature: 0.2,
+      messages: [
+        { role: 'system', content: RUSTREN_AI_SYSTEM_PROMPT },
+        { role: 'user', content },
+      ],
+    };
+    const useJsonFormat = provider === 'openai' || provider === 'openrouter';
+    let resp = await fetch(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        model: model || 'gpt-4o-mini',
-        temperature: 0.7,
-        messages: [
-          { role: 'system', content: RUSTREN_AI_SYSTEM_PROMPT },
-          { role: 'user', content },
-        ],
-      }),
+      body: JSON.stringify(
+        useJsonFormat ? { ...baseBody, response_format: { type: 'json_object' } } : baseBody
+      ),
     });
+    if (useJsonFormat && resp.status === 400) {
+      // Some OpenRouter models reject response_format; retry once without it
+      resp = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(baseBody),
+      });
+    }
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       throw new Error(data?.error?.message || `LLM API error (${resp.status})`);
