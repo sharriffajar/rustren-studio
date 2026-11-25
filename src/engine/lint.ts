@@ -73,9 +73,9 @@ export function lintScene(scene: RustrenScene): LintWarning[] {
           });
         }
         const fg = layer.color ?? '#FFFFFF';
-        // Check if a solid rect layer below this text overlaps its anchor point
+        // Check if a solid rect layer below this text (at root or inside same container) overlaps its anchor point
         let effectiveBg = parentBg;
-        if (!inContainer && layer.x !== undefined && layer.y !== undefined) {
+        if (layer.x !== undefined && layer.y !== undefined) {
           for (let j = idx - 1; j >= 0; j--) {
             const below = layers[j];
             if (below.type === 'rect' && below.color && (below.opacity ?? 1) >= 0.7 && !below.hidden) {

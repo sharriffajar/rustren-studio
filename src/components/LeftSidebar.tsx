@@ -412,7 +412,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                   </div>
                   <p className="text-xs text-[#E4E4E7] leading-snug">{w.message}</p>
                   {w.fix && (
-                    <p className="text-[11px] text-[#A1A1AA]">Saran: {w.fix}</p>
+                    <p className="text-[11px] text-[#A1A1AA]">Fix: {w.fix}</p>
                   )}
                 </div>
               ))}
