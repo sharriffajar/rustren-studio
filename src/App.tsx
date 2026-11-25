@@ -17,11 +17,13 @@ import {
 import { compileRustrenHtml } from './engine/htmlCompiler';
 import { autoFixScene, lintScene } from './engine/lint';
 import { SCENE_PRESETS } from './engine/presets';
+import { renderRustrenFrame } from './engine/renderer';
 import type {
   AiChatMessage,
   AiProviderConfig,
   AiReferenceImage,
   CanvasConfig,
+  FrameNote,
   Layer,
   RustrenScene,
 } from './engine/types';
@@ -178,6 +180,7 @@ export default function App() {
 
   const [leftTab, setLeftTab] = useState<LeftTab>('layers');
   const [rightTab, setRightTab] = useState<'ai' | 'inspector'>('ai');
+  const [frameNotes, setFrameNotes] = useState<FrameNote[]>([]);
   const [exportOpen, setExportOpen] = useState<boolean>(false);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
@@ -689,6 +692,18 @@ export default function App() {
           isPlaying={isPlaying}
           loop={loop}
           selectedLayerIndex={selectedLayerIndex}
+          frameNotes={frameNotes}
+          onAddFrameNote={(note) => {
+            setFrameNotes((prev) => [
+              ...prev,
+              { ...note, id: `note_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` },
+            ]);
+            setRightTab('ai');
+            showToast('Frame note pinned. Click "Apply Notes with AI" when ready.');
+          }}
+          onDeleteFrameNote={(id) => {
+            setFrameNotes((prev) => prev.filter((n) => n.id !== id));
+          }}
           onTogglePlay={() => setIsPlaying((p) => !p)}
           onSeek={(t) => {
             setIsPlaying(false);
@@ -705,6 +720,7 @@ export default function App() {
               .then((res) => showToast(`Snapshot saved: ${res.filename}`))
               .catch(() => {});
           }}
+          onNotify={showToast}
         />
 
         {/* Right Pane: AI BYOK Director & Layer Inspector */}
@@ -764,6 +780,48 @@ export default function App() {
                 showToast('Scene reverted to previous version.');
               }}
               studioGeminiAvailable={capabilities.studioGeminiAvailable}
+              frameNotes={frameNotes}
+              onSeekToTime={(t) => {
+                setIsPlaying(false);
+                setCurrentTime(t);
+              }}
+              onDeleteFrameNote={(id) => {
+                setFrameNotes((prev) => prev.filter((n) => n.id !== id));
+              }}
+              onClearFrameNotes={() => setFrameNotes([])}
+              onApplyFrameNotes={() => {
+                if (frameNotes.length === 0) return;
+                const lines = frameNotes.map((n, i) => {
+                  const region = n.w && n.h ? `box (${n.x},${n.y} ${n.w}x${n.h})` : `point (${n.x},${n.y})`;
+                  return `${i + 1}. [t=${n.timeSec.toFixed(2)}s, ${region}]: ${n.note}`;
+                });
+                const prompt = `Apply these frame-pinned review notes to the current scene:\n${lines.join('\n')}`;
+                const refs: AiReferenceImage[] = [];
+                try {
+                  const snapCanvas = document.createElement('canvas');
+                  snapCanvas.width = scene.canvas.width;
+                  snapCanvas.height = scene.canvas.height;
+                  const sctx = snapCanvas.getContext('2d');
+                  if (sctx) {
+                    renderRustrenFrame(sctx, scene, currentTime);
+                    const dataUrl = snapCanvas.toDataURL('image/png');
+                    const base64 = dataUrl.split(',')[1] || '';
+                    if (base64) {
+                      refs.push({
+                        id: `frame_snap_${Date.now()}`,
+                        name: `stage-t${currentTime.toFixed(2)}s.png`,
+                        mimeType: 'image/png',
+                        dataUrl,
+                        base64,
+                      });
+                    }
+                  }
+                } catch {
+                  // proceed without snapshot if canvas taint occurs
+                }
+                void handleSendAiCommand(prompt, 'edit', refs);
+                setFrameNotes([]);
+              }}
             />
           ) : (
             <InspectorPanel

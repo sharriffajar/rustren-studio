@@ -3,16 +3,20 @@ import {
   Camera,
   ChevronLeft,
   ChevronRight,
+  Cpu,
   Grid,
+  Loader2,
+  MessageSquarePlus,
   Pause,
   Play,
   Repeat,
   SkipBack,
   SkipForward,
+  X,
 } from 'lucide-react';
 import { formatTimecode } from '../engine/animation';
 import { renderRustrenFrame, type LayerBounds } from '../engine/renderer';
-import type { RustrenScene } from '../engine/types';
+import type { FrameNote, RustrenScene } from '../engine/types';
 
 interface StageViewportProps {
   scene: RustrenScene;
@@ -20,12 +24,16 @@ interface StageViewportProps {
   isPlaying: boolean;
   loop: boolean;
   selectedLayerIndex: number | null;
+  frameNotes: FrameNote[];
+  onAddFrameNote: (note: Omit<FrameNote, 'id'>) => void;
+  onDeleteFrameNote: (id: string) => void;
   onTogglePlay: () => void;
   onSeek: (t: number) => void;
   onToggleLoop: () => void;
   onSelectLayer: (idx: number | null) => void;
   onDragMoveLayer: (idx: number, dx: number, dy: number) => void;
   onSnapshotPng: () => void;
+  onNotify?: (msg: string) => void;
 }
 
 export const StageViewport: React.FC<StageViewportProps> = ({
@@ -34,12 +42,16 @@ export const StageViewport: React.FC<StageViewportProps> = ({
   isPlaying,
   loop,
   selectedLayerIndex,
+  frameNotes,
+  onAddFrameNote,
+  onDeleteFrameNote,
   onTogglePlay,
   onSeek,
   onToggleLoop,
   onSelectLayer,
   onDragMoveLayer,
   onSnapshotPng,
+  onNotify,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageWrapRef = useRef<HTMLDivElement | null>(null);
@@ -71,6 +83,60 @@ export const StageViewport: React.FC<StageViewportProps> = ({
   const [showGuides, setShowGuides] = useState(false);
   const [zoomMode, setZoomMode] = useState<'fit' | '75' | '100'>('fit');
   const [assetTick, setAssetTick] = useState(0);
+
+  // Frame Annotation (Pin / Box) mode
+  const [annotateMode, setAnnotateMode] = useState(false);
+  const [draftBox, setDraftBox] = useState<{ startX: number; startY: number; curX: number; curY: number } | null>(null);
+  const [pendingNote, setPendingNote] = useState<{ x: number; y: number; w?: number; h?: number } | null>(null);
+  const [noteText, setNoteText] = useState('');
+
+  // True Rustren Engine Preview (POST /snapshot)
+  const [rustrenPreviewUrl, setRustrenPreviewUrl] = useState<string | null>(null);
+  const [rustrenPreviewLoading, setRustrenPreviewLoading] = useState(false);
+
+  // Clear Rustren preview overlay whenever playhead or scene changes
+  useEffect(() => {
+    if (rustrenPreviewUrl) {
+      URL.revokeObjectURL(rustrenPreviewUrl);
+      setRustrenPreviewUrl(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTime, scene]);
+
+  const handleRustrenPreview = async () => {
+    if (rustrenPreviewUrl) {
+      URL.revokeObjectURL(rustrenPreviewUrl);
+      setRustrenPreviewUrl(null);
+      return;
+    }
+    const apiUrl = (localStorage.getItem('rustren_studio_api_url') || 'https://nvm.web.id/rustren/api').replace(/\/+$/, '');
+    const apiKey = (localStorage.getItem('rustren_studio_api_key') || '').trim();
+    if (!apiKey) {
+      onNotify?.('Set your Rustren API key in Export → Rustren Cloud API first.');
+      return;
+    }
+    setRustrenPreviewLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/snapshot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ scene, time: Number(currentTime.toFixed(3)) }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => res.statusText);
+        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 120)}`);
+      }
+      const blob = await res.blob();
+      setRustrenPreviewUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      onNotify?.(`Rustren Preview failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setRustrenPreviewLoading(false);
+    }
+  };
 
   const fps = scene.canvas.fps || 30;
   const duration = scene.canvas.duration_secs || 5;
@@ -110,6 +176,13 @@ export const StageViewport: React.FC<StageViewportProps> = ({
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const pt = clientToCanvas(e);
+    if (annotateMode) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setPendingNote(null);
+      setNoteText('');
+      setDraftBox({ startX: pt.x, startY: pt.y, curX: pt.x, curY: pt.y });
+      return;
+    }
     // Hit test top-most layer first
     const bounds = boundsRef.current;
     let hitIdx: number | null = null;
@@ -133,6 +206,11 @@ export const StageViewport: React.FC<StageViewportProps> = ({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (annotateMode && draftBox) {
+      const pt = clientToCanvas(e);
+      setDraftBox((prev) => (prev ? { ...prev, curX: pt.x, curY: pt.y } : null));
+      return;
+    }
     const drag = dragStateRef.current;
     if (!drag) return;
     const pt = clientToCanvas(e);
@@ -146,7 +224,31 @@ export const StageViewport: React.FC<StageViewportProps> = ({
   };
 
   const handlePointerUp = () => {
+    if (annotateMode && draftBox) {
+      const x = Math.round(Math.min(draftBox.startX, draftBox.curX));
+      const y = Math.round(Math.min(draftBox.startY, draftBox.curY));
+      const w = Math.round(Math.abs(draftBox.curX - draftBox.startX));
+      const h = Math.round(Math.abs(draftBox.curY - draftBox.startY));
+      setPendingNote(w > 12 && h > 12 ? { x, y, w, h } : { x: Math.round(draftBox.startX), y: Math.round(draftBox.startY) });
+      setDraftBox(null);
+      return;
+    }
     dragStateRef.current = null;
+  };
+
+  const handleCommitNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingNote || !noteText.trim()) return;
+    onAddFrameNote({
+      timeSec: Number(currentTime.toFixed(2)),
+      x: pendingNote.x,
+      y: pendingNote.y,
+      w: pendingNote.w,
+      h: pendingNote.h,
+      note: noteText.trim(),
+    });
+    setPendingNote(null);
+    setNoteText('');
   };
 
   return (
@@ -181,6 +283,45 @@ export const StageViewport: React.FC<StageViewportProps> = ({
               </button>
             ))}
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAnnotateMode((v) => !v);
+              setDraftBox(null);
+              setPendingNote(null);
+            }}
+            aria-pressed={annotateMode}
+            title="Click or drag on frame to pin notes for AI Director"
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
+              annotateMode
+                ? 'bg-[#F97316] border-[#F97316] text-[#09090D]'
+                : 'bg-[#1A1B23] border-[#272834] text-[#A1A1AA] hover:text-white'
+            }`}
+          >
+            <MessageSquarePlus className="w-3.5 h-3.5" />
+            <span>Annotate{frameNotes.length > 0 ? ` (${frameNotes.length})` : ''}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleRustrenPreview()}
+            disabled={rustrenPreviewLoading}
+            aria-pressed={Boolean(rustrenPreviewUrl)}
+            title="Fetch pixel-exact PNG preview from Rustren Cloud API (/snapshot)"
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
+              rustrenPreviewUrl
+                ? 'bg-[#10B981]/20 border-[#10B981]/60 text-[#6EE7B7]'
+                : 'bg-[#1A1B23] border-[#272834] text-[#A1A1AA] hover:text-white'
+            }`}
+          >
+            {rustrenPreviewLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Cpu className="w-3.5 h-3.5" />
+            )}
+            <span>Rustren Preview</span>
+          </button>
 
           <button
             type="button"
@@ -249,8 +390,135 @@ export const StageViewport: React.FC<StageViewportProps> = ({
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            className="w-full h-full block cursor-crosshair"
+            className={`w-full h-full block ${annotateMode ? 'cursor-cell' : 'cursor-crosshair'}`}
           />
+
+          {/* True Rustren Engine Preview Overlay */}
+          {rustrenPreviewUrl && (
+            <div className="absolute inset-0 z-20 pointer-events-none">
+              <img
+                src={rustrenPreviewUrl}
+                alt="Rustren exact engine preview"
+                className="w-full h-full object-contain block"
+              />
+              <div className="absolute top-2 left-2 pointer-events-auto flex items-center gap-2 bg-[#09090D]/90 border border-[#10B981]/60 text-[#6EE7B7] text-[11px] font-mono px-2.5 py-1 rounded shadow-lg">
+                <span>Rustren Engine Preview · t={currentTime.toFixed(2)}s</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    URL.revokeObjectURL(rustrenPreviewUrl);
+                    setRustrenPreviewUrl(null);
+                  }}
+                  aria-label="Close Rustren preview"
+                  className="text-[#A1A1AA] hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Draft selection box while dragging in Annotate mode */}
+          {draftBox && (
+            <div
+              className="absolute pointer-events-none border-2 border-dashed border-[#F97316] bg-[#F97316]/15 z-20"
+              style={{
+                left: `${(Math.min(draftBox.startX, draftBox.curX) / scene.canvas.width) * 100}%`,
+                top: `${(Math.min(draftBox.startY, draftBox.curY) / scene.canvas.height) * 100}%`,
+                width: `${(Math.abs(draftBox.curX - draftBox.startX) / scene.canvas.width) * 100}%`,
+                height: `${(Math.abs(draftBox.curY - draftBox.startY) / scene.canvas.height) * 100}%`,
+              }}
+            />
+          )}
+
+          {/* Existing Frame Notes pins & boxes */}
+          {frameNotes.map((n, idx) => {
+            const isNear = Math.abs(n.timeSec - currentTime) <= 0.4;
+            return (
+              <div
+                key={n.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSeek(n.timeSec);
+                }}
+                title={`#${idx + 1} @ ${n.timeSec.toFixed(2)}s: ${n.note}`}
+                className={`absolute z-20 cursor-pointer transition-opacity ${isNear ? 'opacity-100' : 'opacity-40 hover:opacity-90'}`}
+                style={{
+                  left: `${(n.x / scene.canvas.width) * 100}%`,
+                  top: `${(n.y / scene.canvas.height) * 100}%`,
+                  width: n.w ? `${(n.w / scene.canvas.width) * 100}%` : undefined,
+                  height: n.h ? `${(n.h / scene.canvas.height) * 100}%` : undefined,
+                }}
+              >
+                {n.w && n.h ? (
+                  <div className="w-full h-full border-2 border-[#F97316] bg-[#F97316]/10 rounded-sm relative">
+                    <span className="absolute -top-3 -left-3 w-5 h-5 rounded-full bg-[#F97316] text-[#09090D] text-[10px] font-bold flex items-center justify-center shadow">
+                      {idx + 1}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="-translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-[#F97316] text-[#09090D] text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                    <span>#{idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteFrameNote(n.id);
+                      }}
+                      aria-label={`Delete note ${idx + 1}`}
+                      className="hover:text-white"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Pending Note Popover */}
+          {pendingNote && (
+            <form
+              onSubmit={handleCommitNote}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute z-30 bg-[#14151C] border border-[#F97316]/70 rounded-lg p-2.5 shadow-2xl w-64 space-y-2"
+              style={{
+                left: `${Math.min(72, (pendingNote.x / scene.canvas.width) * 100)}%`,
+                top: `${Math.min(72, (pendingNote.y / scene.canvas.height) * 100)}%`,
+              }}
+            >
+              <div className="text-[10px] font-mono text-[#FDBA74] flex items-center justify-between">
+                <span>
+                  Note @ t={currentTime.toFixed(2)}s ({pendingNote.x}, {pendingNote.y}
+                  {pendingNote.w ? ` · ${pendingNote.w}×${pendingNote.h}` : ''})
+                </span>
+              </div>
+              <input
+                type="text"
+                autoFocus
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="e.g. Make this headline bigger & bounce..."
+                className="w-full bg-[#0D0E14] border border-[#2B2D3B] rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#F97316]"
+              />
+              <div className="flex justify-end gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPendingNote(null)}
+                  className="px-2 py-1 rounded text-[11px] text-[#A1A1AA] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!noteText.trim()}
+                  className="px-2.5 py-1 rounded text-[11px] font-semibold bg-[#F97316] text-[#09090D] hover:bg-[#FB923C] disabled:opacity-40"
+                >
+                  Add Note
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
 

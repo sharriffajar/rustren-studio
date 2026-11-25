@@ -20,6 +20,7 @@ import type {
   AiProviderConfig,
   AiProviderId,
   AiReferenceImage,
+  FrameNote,
   RustrenScene,
 } from '../engine/types';
 import {
@@ -42,6 +43,11 @@ interface AiDirectorPanelProps {
   ) => void;
   onRevertScene: (scene: RustrenScene) => void;
   studioGeminiAvailable: boolean;
+  frameNotes: FrameNote[];
+  onSeekToTime: (t: number) => void;
+  onDeleteFrameNote: (id: string) => void;
+  onClearFrameNotes: () => void;
+  onApplyFrameNotes: () => void;
 }
 
 /** How many moodboard images one prompt may carry. */
@@ -115,6 +121,11 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
   onSendCommand,
   onRevertScene,
   studioGeminiAvailable,
+  frameNotes,
+  onSeekToTime,
+  onDeleteFrameNote,
+  onClearFrameNotes,
+  onApplyFrameNotes,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [mode, setMode] = useState<'edit' | 'new'>('edit');
@@ -482,6 +493,60 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
             className="text-[11px] text-[#FCA5A5] bg-[#7F1D1D]/25 border border-[#EF4444]/40 rounded px-2 py-1.5"
           >
             {validationError}
+          </div>
+        )}
+
+        {frameNotes.length > 0 && (
+          <div className="rounded border border-[#F97316]/40 bg-[#171311] p-2 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-semibold tracking-wide text-[#FDBA74]">
+                FRAME NOTES ({frameNotes.length})
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={onClearFrameNotes}
+                  className="text-[10px] text-[#8B8B96] hover:text-white"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  disabled={isRunning}
+                  onClick={onApplyFrameNotes}
+                  className="px-2 py-0.5 rounded bg-[#F97316] hover:bg-[#FB923C] text-[#09090D] text-[10px] font-bold disabled:opacity-40"
+                >
+                  Apply Notes with AI
+                </button>
+              </div>
+            </div>
+            <div className="max-h-24 overflow-y-auto space-y-1">
+              {frameNotes.map((n, idx) => (
+                <div
+                  key={n.id}
+                  className="flex items-start justify-between gap-1.5 text-[11px] bg-[#0F1016] border border-[#272834] rounded px-1.5 py-1"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onSeekToTime(n.timeSec)}
+                    className="text-left min-w-0 flex-1 hover:text-white text-[#D4D4D8]"
+                  >
+                    <span className="font-mono text-[10px] text-[#F97316] mr-1">
+                      #{idx + 1} @{n.timeSec.toFixed(2)}s
+                    </span>
+                    <span className="break-words">{n.note}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteFrameNote(n.id)}
+                    aria-label={`Remove frame note ${idx + 1}`}
+                    className="text-[#71717A] hover:text-[#FCA5A5] shrink-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

@@ -1,7 +1,9 @@
 import {
   clamp,
   evalDynamicText,
+  evalEasing,
   evaluateLayerAtTime,
+  normalizeFontWeight,
   type ComputedLayerProps,
 } from './animation';
 import type {
@@ -11,6 +13,8 @@ import type {
   Layer,
   LinearGradient,
   RustrenScene,
+  TrackMatteMode,
+  WaveWarpSpec,
 } from './types';
 
 export interface LayerBounds {
@@ -238,8 +242,17 @@ export function renderRustrenFrame(
   ctx.fillRect(0, 0, width, height);
 
   const layers = scene.layers || [];
+  const layerById = new Map<string, Layer>();
+  const matteIds = new Set<string>();
+  for (const l of layers) {
+    if (l.id) layerById.set(l.id, l);
+    if (l.name && !layerById.has(l.name)) layerById.set(l.name, l);
+    if (l.track_matte && l.matte_layer) matteIds.add(l.matte_layer);
+  }
+
   layers.forEach((layer, idx) => {
-    renderLayer(ctx, layer, idx, timeSec, duration_secs, 1, 0, 0, options);
+    if (layer.id && matteIds.has(layer.id)) return;
+    renderLayer(ctx, layer, idx, timeSec, duration_secs, 1, 0, 0, options, layerById, width, height);
   });
 
   // Safe area guide overlay (only in editor preview, never during export)
@@ -314,9 +327,119 @@ function applyTransform(
     const sy = Math.tan(((props.skew_y || 0) * Math.PI) / 180);
     ctx.transform(1, sy, sx, 1, 0, 0);
   }
-  if (props.scale !== 1) {
-    ctx.scale(props.scale, props.scale);
+  const sx = props.scale * props.scale_x;
+  const sy = props.scale * props.scale_y;
+  if (sx !== 1 || sy !== 1) {
+    ctx.scale(sx, sy);
   }
+}
+
+function applyWaveWarpToCanvas(
+  srcCanvas: HTMLCanvasElement,
+  warp: WaveWarpSpec,
+  timeSec: number
+): HTMLCanvasElement {
+  const w = srcCanvas.width;
+  const h = srcCanvas.height;
+  const amp = warp.amplitude ?? 12;
+  if (Math.abs(amp) < 0.01 || w === 0 || h === 0) return srcCanvas;
+  const freq = warp.frequency ?? 0.04;
+  const speed = warp.speed ?? 4;
+  const phase = (warp.phase ?? 0) + timeSec * speed;
+  const axis = warp.axis ?? 'x';
+
+  const sctx = srcCanvas.getContext('2d');
+  if (!sctx) return srcCanvas;
+  const srcData = sctx.getImageData(0, 0, w, h);
+  const dstCanvas = document.createElement('canvas');
+  dstCanvas.width = w;
+  dstCanvas.height = h;
+  const dctx = dstCanvas.getContext('2d');
+  if (!dctx) return srcCanvas;
+  const dstData = dctx.createImageData(w, h);
+  const s = srcData.data;
+  const d = dstData.data;
+
+  if (axis === 'x' || axis === 'stretch_x') {
+    const lut = new Int32Array(h);
+    for (let y = 0; y < h; y++) {
+      lut[y] = Math.round(Math.sin(y * freq + phase) * amp);
+    }
+    const stretch = axis === 'stretch_x';
+    for (let y = 0; y < h; y++) {
+      const shift = lut[y];
+      const rowOff = y * w;
+      for (let x = 0; x < w; x++) {
+        let sx = stretch
+          ? Math.round(w * 0.5 + (x - w * 0.5) / Math.max(0.2, 1 + (shift / Math.max(1, w)) * 2))
+          : x - shift;
+        if (sx < 0 || sx >= w) continue;
+        const si = (rowOff + sx) * 4;
+        const di = (rowOff + x) * 4;
+        d[di] = s[si];
+        d[di + 1] = s[si + 1];
+        d[di + 2] = s[si + 2];
+        d[di + 3] = s[si + 3];
+      }
+    }
+  } else {
+    const lut = new Int32Array(w);
+    for (let x = 0; x < w; x++) {
+      lut[x] = Math.round(Math.sin(x * freq + phase) * amp);
+    }
+    const stretch = axis === 'stretch_y';
+    for (let y = 0; y < h; y++) {
+      const rowOff = y * w;
+      for (let x = 0; x < w; x++) {
+        const shift = lut[x];
+        let sy = stretch
+          ? Math.round(h * 0.5 + (y - h * 0.5) / Math.max(0.2, 1 + (shift / Math.max(1, h)) * 2))
+          : y - shift;
+        if (sy < 0 || sy >= h) continue;
+        const si = (sy * w + x) * 4;
+        const di = (rowOff + x) * 4;
+        d[di] = s[si];
+        d[di + 1] = s[si + 1];
+        d[di + 2] = s[si + 2];
+        d[di + 3] = s[si + 3];
+      }
+    }
+  }
+
+  dctx.putImageData(dstData, 0, 0);
+  return dstCanvas;
+}
+
+function applyTrackMatteToCanvas(
+  srcCanvas: HTMLCanvasElement,
+  matteCanvas: HTMLCanvasElement,
+  mode: TrackMatteMode
+): void {
+  const w = srcCanvas.width;
+  const h = srcCanvas.height;
+  const sctx = srcCanvas.getContext('2d');
+  const mctx = matteCanvas.getContext('2d');
+  if (!sctx || !mctx || w === 0 || h === 0) return;
+
+  const sImg = sctx.getImageData(0, 0, w, h);
+  const mImg = mctx.getImageData(0, 0, w, h);
+  const sd = sImg.data;
+  const md = mImg.data;
+
+  for (let i = 0; i < sd.length; i += 4) {
+    let factor = 0;
+    if (mode === 'alpha' || mode === 'alpha_inverted') {
+      factor = md[i + 3] / 255;
+      if (mode === 'alpha_inverted') factor = 1 - factor;
+    } else {
+      const luma = (0.299 * md[i] + 0.587 * md[i + 1] + 0.114 * md[i + 2]) / 255;
+      factor = luma * (md[i + 3] / 255);
+      if (mode === 'luma_inverted') factor = 1 - factor;
+    }
+    sd[i + 3] = Math.round(sd[i + 3] * clamp(factor, 0, 1));
+  }
+
+  sctx.putImageData(sImg, 0, 0);
 }
 
 function renderLayer(
@@ -328,7 +451,102 @@ function renderLayer(
   inheritedOpacity: number,
   originX: number,
   originY: number,
-  options: RenderOptions
+  options: RenderOptions,
+  layerById?: Map<string, Layer>,
+  canvasW?: number,
+  canvasH?: number
+): void {
+  // Echo motion trails (v0.5.1)
+  if (layer.echo && (layer.echo.count ?? 0) > 0) {
+    const count = Math.min(12, Math.max(0, Math.round(layer.echo.count ?? 3)));
+    const step = layer.echo.step_sec ?? 0.04;
+    const decay = clamp(layer.echo.decay ?? 0.6, 0.05, 0.98);
+    const strippedLayer: Layer = { ...layer, echo: undefined };
+    for (let i = count; i >= 1; i--) {
+      const trailT = timeSec - i * step;
+      if (trailT < 0) continue;
+      const trailOpacity = inheritedOpacity * Math.pow(decay, i);
+      renderLayer(
+        ctx,
+        strippedLayer,
+        null,
+        trailT,
+        durationSecs,
+        trailOpacity,
+        originX,
+        originY,
+        options,
+        layerById,
+        canvasW,
+        canvasH
+      );
+    }
+  }
+
+  // Offscreen post-processing for wave_warp / track_matte (v0.5.1)
+  const needsOffscreen =
+    typeof document !== 'undefined' &&
+    Boolean(layer.wave_warp || (layer.track_matte && layer.matte_layer && layerById?.has(layer.matte_layer)));
+
+  if (needsOffscreen) {
+    const cw = canvasW || ctx.canvas.width || 1920;
+    const ch = canvasH || ctx.canvas.height || 1080;
+    let off = document.createElement('canvas');
+    off.width = cw;
+    off.height = ch;
+    const octx = off.getContext('2d');
+    if (octx) {
+      const cleanLayer: Layer = {
+        ...layer,
+        echo: undefined,
+        wave_warp: undefined,
+        track_matte: undefined,
+        matte_layer: undefined,
+      };
+      renderLayerCore(octx, cleanLayer, rootIndex, timeSec, durationSecs, inheritedOpacity, originX, originY, options, layerById, cw, ch);
+
+      if (layer.wave_warp) {
+        off = applyWaveWarpToCanvas(off, layer.wave_warp, timeSec);
+      }
+
+      if (layer.track_matte && layer.matte_layer && layerById) {
+        const matteLayer = layerById.get(layer.matte_layer);
+        if (matteLayer) {
+          const matteCanvas = document.createElement('canvas');
+          matteCanvas.width = cw;
+          matteCanvas.height = ch;
+          const mctx = matteCanvas.getContext('2d');
+          if (mctx) {
+            renderLayerCore(mctx, matteLayer, null, timeSec, durationSecs, 1, 0, 0, {}, layerById, cw, ch);
+            applyTrackMatteToCanvas(off, matteCanvas, layer.track_matte);
+          }
+        }
+      }
+
+      ctx.save();
+      ctx.globalCompositeOperation = mapBlendMode(layer.blend_mode);
+      ctx.drawImage(off, 0, 0);
+      ctx.restore();
+      return;
+    }
+  }
+
+  renderLayerCore(ctx, layer, rootIndex, timeSec, durationSecs, inheritedOpacity, originX, originY, options, layerById, canvasW, canvasH);
+}
+
+function renderLayerCore(
+  ctx: CanvasRenderingContext2D,
+  layer: Layer,
+  rootIndex: number | null,
+  timeSec: number,
+  durationSecs: number,
+  inheritedOpacity: number,
+  originX: number,
+  originY: number,
+  options: RenderOptions,
+  layerById?: Map<string, Layer>,
+  canvasW?: number,
+  canvasH?: number
 ): void {
   const props = evaluateLayerAtTime(layer, timeSec, durationSecs);
   if (!props.visible || props.opacity <= 0.001) return;
@@ -361,11 +579,13 @@ function renderLayer(
       options.collectBounds.push({ layerIndex: rootIndex, x: px + ox, y: py + oy, width: w, height: h });
     }
 
-    const pivotX = layer.anchor === 'center' ? px : px + w / 2;
-    const pivotY = layer.anchor === 'center' ? py : py + h / 2;
+    const pvx = layer.pivot_x ?? 0.5;
+    const pvy = layer.pivot_y ?? 0.5;
+    const pivotX = px + ox + w * pvx;
+    const pivotY = py + oy + h * pvy;
     applyTransform(ctx, pivotX, pivotY, props);
-    const drawX = layer.anchor === 'center' ? -w / 2 : ox - w / 2;
-    const drawY = layer.anchor === 'center' ? -h / 2 : oy - h / 2;
+    const drawX = -w * pvx;
+    const drawY = -h * pvy;
 
     drawRoundedRectPath(ctx, drawX, drawY, w, h, props.radius);
     ctx.fillStyle = buildFillStyle(ctx, props.color, layer.gradient, w, h);
@@ -410,7 +630,7 @@ function renderLayer(
     }
   } else if (layer.type === 'text') {
     const fontSize = (layer.font_size ?? 48) * props.scale;
-    const weight = layer.font_weight === 'bold' ? '700' : '500';
+    const weight = normalizeFontWeight(layer.font_weight);
     const family = layer.font_family || '"Plus Jakarta Sans", sans-serif';
     ctx.font = `${weight} ${fontSize}px ${family}`;
     ctx.textBaseline = 'top';
@@ -453,17 +673,71 @@ function renderLayer(
         0
       );
     }
+    if (props.scale_x !== 1 || props.scale_y !== 1) {
+      ctx.scale(props.scale_x, props.scale_y);
+    }
 
     ctx.fillStyle = buildFillStyle(ctx, props.color, layer.gradient, boxW, boxH);
     const align = layer.text_align || (layer.anchor === 'center' ? 'center' : 'left');
     ctx.textAlign = align === 'start' ? 'left' : align === 'end' ? 'right' : align;
 
-    lines.forEach((line, i) => {
-      let drawX = ox;
-      if (ctx.textAlign === 'center') drawX = ox + boxW / 2;
-      else if (ctx.textAlign === 'right') drawX = ox + boxW;
-      ctx.fillText(line, drawX, oy + i * lineHeight);
-    });
+    if (layer.text_animator) {
+      const ta = layer.text_animator;
+      const unit = ta.unit ?? 'char';
+      const taStart = ta.start_sec ?? layer.start_sec ?? 0;
+      const stagger = ta.stagger_secs ?? 0.04;
+      const dur = Math.max(0.01, ta.duration_secs ?? 0.35);
+      const xOff = ta.x_offset ?? 0;
+      const yOff = ta.y_offset ?? 24;
+      const opFrom = ta.opacity_from ?? 0;
+      const scFrom = ta.scale_from ?? 1;
+      const easing = ta.easing ?? 'ease_out_expo';
+
+      let itemIdx = 0;
+      lines.forEach((line, lineIdx) => {
+        const lineW = ctx.measureText(line).width;
+        let baseX = ox;
+        if (ctx.textAlign === 'center') baseX = ox + (boxW - lineW) / 2;
+        else if (ctx.textAlign === 'right') baseX = ox + (boxW - lineW);
+
+        const tokens = unit === 'word' ? line.split(/(\s+)/) : Array.from(line);
+        let cursorX = baseX;
+        const baseY = oy + lineIdx * lineHeight;
+
+        for (const tok of tokens) {
+          const tokW = ctx.measureText(tok).width;
+          if (!tok.trim()) {
+            cursorX += tokW;
+            continue;
+          }
+          const tLocal = (timeSec - (taStart + itemIdx * stagger)) / dur;
+          const p = evalEasing(clamp(tLocal, 0, 1), easing);
+          const alpha = opFrom + (1 - opFrom) * p;
+          const sc = scFrom + (1 - scFrom) * p;
+          const dx = xOff * (1 - p);
+          const dy = yOff * (1 - p);
+
+          if (alpha > 0.005) {
+            ctx.save();
+            ctx.globalAlpha = finalOpacity * clamp(alpha, 0, 1);
+            ctx.textAlign = 'left';
+            ctx.translate(cursorX + tokW / 2 + dx, baseY + fontSize / 2 + dy);
+            if (sc !== 1) ctx.scale(sc, sc);
+            ctx.fillText(tok, -tokW / 2, -fontSize / 2);
+            ctx.restore();
+          }
+          cursorX += tokW;
+          itemIdx++;
+        }
+      });
+    } else {
+      lines.forEach((line, i) => {
+        let drawX = ox;
+        if (ctx.textAlign === 'center') drawX = ox + boxW / 2;
+        else if (ctx.textAlign === 'right') drawX = ox + boxW;
+        ctx.fillText(line, drawX, oy + i * lineHeight);
+      });
+    }
   } else if (layer.type === 'waveform') {
     const w = Math.max(10, props.width);
     const h = Math.max(10, props.height);
@@ -609,7 +883,7 @@ function renderLayer(
       ctx.fillText('Image Layer', 0, 0);
     }
   } else if (layer.type === 'container') {
-    renderContainer(ctx, layer, rootIndex, props, timeSec, durationSecs, finalOpacity, originX, originY, options);
+    renderContainer(ctx, layer, rootIndex, props, timeSec, durationSecs, finalOpacity, originX, originY, options, layerById, canvasW, canvasH);
   }
 
   ctx.restore();
@@ -625,7 +899,10 @@ function renderContainer(
   finalOpacity: number,
   originX: number,
   originY: number,
-  options: RenderOptions
+  options: RenderOptions,
+  layerById?: Map<string, Layer>,
+  canvasW?: number,
+  canvasH?: number
 ) {
   const w = Math.max(0, props.width || 600);
   const h = Math.max(0, props.height || 300);
@@ -657,7 +934,15 @@ function renderContainer(
     ctx.stroke();
   }
 
-  if (layer.clip) {
+  const useFeather = Boolean(layer.clip && layer.clip_feather && layer.clip_feather > 0 && typeof document !== 'undefined');
+  let targetCtx = ctx;
+  let featherCanvas: HTMLCanvasElement | null = null;
+  if (useFeather) {
+    featherCanvas = document.createElement('canvas');
+    featherCanvas.width = Math.max(1, Math.ceil(w));
+    featherCanvas.height = Math.max(1, Math.ceil(h));
+    targetCtx = featherCanvas.getContext('2d') || ctx;
+  } else if (layer.clip) {
     drawRoundedRectPath(ctx, 0, 0, w, h, props.radius);
     ctx.clip();
   }
@@ -686,9 +971,9 @@ function renderContainer(
     }
 
     if (child.position === 'absolute') {
-      renderLayer(ctx, child, null, childTime, durationSecs, childOpacity, 0, 0, options);
+      renderLayer(targetCtx, child, null, childTime, durationSecs, childOpacity, 0, 0, options, layerById, canvasW, canvasH);
     } else {
-      renderLayer(ctx, child, null, childTime, durationSecs, childOpacity, cursorX, cursorY, options);
+      renderLayer(targetCtx, child, null, childTime, durationSecs, childOpacity, cursorX, cursorY, options, layerById, canvasW, canvasH);
       const cw = 'width' in child && typeof child.width === 'number' ? child.width : 200;
       const ch =
         child.type === 'text'
@@ -700,6 +985,18 @@ function renderContainer(
       else cursorY += ch + gap;
     }
   });
+
+  if (useFeather && featherCanvas && targetCtx !== ctx) {
+    const feather = layer.clip_feather ?? 0;
+    targetCtx.save();
+    targetCtx.globalCompositeOperation = 'destination-in';
+    targetCtx.filter = `blur(${feather}px)`;
+    drawRoundedRectPath(targetCtx, feather, feather, Math.max(1, w - feather * 2), Math.max(1, h - feather * 2), props.radius);
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.fill();
+    targetCtx.restore();
+    ctx.drawImage(featherCanvas, 0, 0);
+  }
 
   ctx.restore();
 }

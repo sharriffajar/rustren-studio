@@ -46,6 +46,8 @@ export type AnimProperty =
   | 'height'
   | 'opacity'
   | 'scale'
+  | 'scale_x'
+  | 'scale_y'
   | 'rotation'
   | 'skew_x'
   | 'skew_y'
@@ -78,6 +80,66 @@ export type Anchor =
   | 'bottom_right';
 
 export type TextAlign = 'left' | 'center' | 'right' | 'start' | 'end';
+
+export type FontWeight =
+  | 'thin'
+  | 'extralight'
+  | 'light'
+  | 'normal'
+  | 'medium'
+  | 'semibold'
+  | 'bold'
+  | 'extrabold'
+  | 'black'
+  | 100
+  | 200
+  | 300
+  | 400
+  | 500
+  | 600
+  | 700
+  | 800
+  | 900;
+
+export type WaveWarpAxis = 'x' | 'y' | 'stretch_x' | 'stretch_y';
+
+export interface WaveWarpSpec {
+  amplitude?: number;
+  frequency?: number;
+  speed?: number;
+  phase?: number;
+  axis?: WaveWarpAxis;
+}
+
+export interface EchoSpec {
+  count?: number;
+  step_sec?: number;
+  decay?: number;
+}
+
+export interface TextAnimatorSpec {
+  unit?: 'char' | 'word';
+  start_sec?: number;
+  stagger_secs?: number;
+  duration_secs?: number;
+  x_offset?: number;
+  y_offset?: number;
+  opacity_from?: number;
+  scale_from?: number;
+  easing?: Easing;
+}
+
+export type TrackMatteMode = 'alpha' | 'alpha_inverted' | 'luma' | 'luma_inverted';
+
+export interface FrameNote {
+  id: string;
+  timeSec: number;
+  x: number;
+  y: number;
+  w?: number;
+  h?: number;
+  note: string;
+}
 
 export interface GradientStop {
   offset: number;
@@ -115,6 +177,7 @@ export interface Animation {
   bezier?: [number, number, number, number];
   spring?: SpringConfig;
   keyframes?: Keyframe[];
+  expr?: string;
   expression?: string;
   repeat?: number | 'infinite';
   yoyo?: boolean;
@@ -196,11 +259,19 @@ export interface BaseLayer {
   opacity?: number;
   z_index?: number;
   anchor?: Anchor;
+  pivot_x?: number;
+  pivot_y?: number;
+  scale_x?: number;
+  scale_y?: number;
   skew_x?: number;
   skew_y?: number;
   blur?: number;
   blend_mode?: BlendMode;
   shadow?: ShadowConfig;
+  echo?: EchoSpec;
+  wave_warp?: WaveWarpSpec;
+  track_matte?: TrackMatteMode;
+  matte_layer?: string;
   hidden?: boolean;
   animations?: Animation[];
 }
@@ -246,8 +317,9 @@ export interface TextLayer extends BaseLayer {
   line_height?: number;
   letter_spacing?: number;
   font_family?: string;
-  font_weight?: 'normal' | 'bold';
+  font_weight?: FontWeight;
   text_align?: TextAlign;
+  text_animator?: TextAnimatorSpec;
   color?: HexColor;
   gradient?: LinearGradient;
   scale?: number;
@@ -326,6 +398,7 @@ export interface ContainerLayer extends BaseLayer {
   border_color?: HexColor;
   border_width?: number;
   clip?: boolean;
+  clip_feather?: number;
   cascade_opacity?: boolean;
   timeline?: 'global' | 'local' | 'series';
   stagger_secs?: number;

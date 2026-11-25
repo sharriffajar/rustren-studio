@@ -2,6 +2,7 @@ import type {
   Animation,
   DynamicText,
   Easing,
+  FontWeight,
   HexColor,
   Layer,
   SpringConfig,
@@ -400,16 +401,44 @@ function isColorProp(prop: string): boolean {
   return prop === 'color' || prop === 'background' || prop === 'border_color';
 }
 
+export function normalizeFontWeight(w?: FontWeight): string {
+  if (w === undefined || w === null) return '500';
+  if (typeof w === 'number') return String(clamp(Math.round(w / 100) * 100, 100, 900));
+  switch (w) {
+    case 'thin':
+      return '100';
+    case 'extralight':
+      return '200';
+    case 'light':
+      return '300';
+    case 'normal':
+      return '400';
+    case 'medium':
+      return '500';
+    case 'semibold':
+      return '600';
+    case 'bold':
+      return '700';
+    case 'extrabold':
+      return '800';
+    case 'black':
+      return '900';
+    default:
+      return '500';
+  }
+}
+
 export function evaluateAnimation(
   anim: Animation,
   timeSec: number,
   currentValue: number | string
 ): number | string | undefined {
-  if (anim.expression) {
+  const exprStr = anim.expr ?? anim.expression;
+  if (exprStr) {
     if (typeof currentValue === 'number') {
-      return evalMathExpression(anim.expression, timeSec, currentValue);
+      return evalMathExpression(exprStr, timeSec, currentValue);
     }
-    return evalMathExpression(anim.expression, timeSec, 0);
+    return evalMathExpression(exprStr, timeSec, 0);
   }
 
   if (anim.keyframes && anim.keyframes.length >= 2) {
@@ -483,6 +512,8 @@ export interface ComputedLayerProps {
   radius: number;
   opacity: number;
   scale: number;
+  scale_x: number;
+  scale_y: number;
   rotation: number;
   skew_x: number;
   skew_y: number;
@@ -526,6 +557,8 @@ export function evaluateLayerAtTime(
     radius: 'radius' in layer && typeof layer.radius === 'number' ? layer.radius : 0,
     opacity: layer.opacity ?? 1,
     scale: 'scale' in layer && typeof layer.scale === 'number' ? layer.scale : 1,
+    scale_x: layer.scale_x ?? 1,
+    scale_y: layer.scale_y ?? 1,
     rotation: 'rotation' in layer && typeof layer.rotation === 'number' ? layer.rotation : 0,
     skew_x: layer.skew_x ?? 0,
     skew_y: layer.skew_y ?? 0,

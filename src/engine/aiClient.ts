@@ -19,21 +19,22 @@ Respond ONLY with a valid JSON object matching this exact structure (no markdown
   }
 }
 
-Supported Rustren v1.1 layer types & fields:
-1. "rect": { type: "rect", name, x, y, width, height, radius?, color, gradient?, border_color?, border_width?, anchor?, opacity?, rotation?, scale?, skew_x?, start_sec?, end_sec?, shadow?, animations? }
-2. "circle": { type: "circle", name, cx, cy, r, color, border_color?, border_width?, opacity?, scale?, start_sec?, end_sec?, animations? }
-3. "text": { type: "text", name, x, y, content?, dynamic?, font_size, font_weight?: "normal"|"bold", font_family?, text_align?: "left"|"center"|"right", anchor?, color, max_width?, line_height?, opacity?, scale?, rotation?, start_sec?, end_sec?, animations? }
+Supported Rustren v1.1 (v0.5.1) layer types & fields:
+Common BaseLayer fields on all layers: id?, name?, anchor?, pivot_x? (0..1, default 0.5), pivot_y? (0..1, default 0.5), opacity?, scale?, scale_x?, scale_y?, rotation?, skew_x?, skew_y?, blur?, blend_mode? ("normal"|"multiply"|"screen"|"overlay"|"darken"|"lighten"|"color_dodge"|"color_burn"|"hard_light"|"soft_light"|"difference"|"exclusion"), shadow?, echo?: { count?, step_sec?, decay? }, wave_warp?: { amplitude?, frequency?, speed?, phase?, axis?: "x"|"y"|"stretch_x"|"stretch_y" }, track_matte?: "alpha"|"alpha_inverted"|"luma"|"luma_inverted", matte_layer?: "<layer_id>", start_sec?, end_sec?, animations?
+1. "rect": { type: "rect", name, x, y, width, height, radius?, color, gradient?, border_color?, border_width?, ... }
+2. "circle": { type: "circle", name, cx, cy, r, color, border_color?, border_width?, ... }
+3. "text": { type: "text", name, x, y, content?, dynamic?, font_size, font_weight?: "thin"|"light"|"normal"|"medium"|"semibold"|"bold"|"extrabold"|"black"|100..900, font_family?, text_align?: "left"|"center"|"right", color, max_width?, line_height?, text_animator?: { unit?: "char"|"word", start_sec?, stagger_secs?, duration_secs?, x_offset?, y_offset?, opacity_from?, scale_from?, easing? }, ... }
    - dynamic modes:
      - { mode: "typewriter", text: "...", start_sec: 0.2, end_sec: 1.2, cursor: "_" }
      - { mode: "counter", from: 0, to: 100, decimals?: 1, prefix?: "", suffix?: "%", start_sec: 0.5, end_sec: 2.0, easing?: "ease_out_expo" }
      - { mode: "timecode", format?: "mm:ss.cc" }
-4. "waveform": { type: "waveform", name, x, y, width, height, bars?, bar_gap?, color, speed?, seed?, start_sec?, end_sec?, opacity?, animations? }
-5. "particles": { type: "particles", name, x, y, width, height, count?, seed?, speed?, gravity?, spread?, angle?, size?, shape?: "circle"|"rect"|"confetti", colors?: string[], start_sec?, end_sec?, opacity? }
-6. "svg": { type: "svg", name, x, y, width, height, src: "<svg ...>...</svg>", opacity?, start_sec?, end_sec?, animations? }
-7. "container": { type: "container", name, x, y, width, height, color?, radius?, clip?, cascade_opacity?, layout?: { direction?: "row"|"column", gap?, padding? }, children: [...], start_sec?, end_sec?, animations? }
+4. "waveform": { type: "waveform", name, x, y, width, height, bars?, bar_gap?, color, speed?, seed?, ... }
+5. "particles": { type: "particles", name, x, y, width, height, count?, seed?, speed?, gravity?, spread?, angle?, size?, shape?: "circle"|"rect"|"confetti", colors?: string[], ... }
+6. "svg": { type: "svg", name, x, y, width, height, src: "<svg ...>...</svg>", ... }
+7. "container": { type: "container", name, x, y, width, height, color?, radius?, clip?, clip_feather?, cascade_opacity?, layout?: { direction?: "row"|"column", gap?, padding? }, children: [...], ... }
 
 Animations array item format:
-{ "property": "x"|"y"|"width"|"height"|"opacity"|"scale"|"rotation"|"skew_x"|"r"|"radius"|"color"|"border_color", "from": <num|hex>, "to": <num|hex>, "start_sec": <num>, "end_sec": <num>, "easing": "linear"|"ease_in"|"ease_out"|"ease_in_out"|"ease_out_expo"|"ease_out_back"|"ease_out_bounce"|"spring", "repeat"?: number|"infinite", "yoyo"?: boolean }
+{ "property": "x"|"y"|"width"|"height"|"opacity"|"scale"|"scale_x"|"scale_y"|"rotation"|"skew_x"|"r"|"radius"|"color"|"border_color", "from"?: <num|hex>, "to"?: <num|hex>, "expr"?: "<math expr with t>", "start_sec"?: <num>, "end_sec"?: <num>, "easing"?: "linear"|"ease_in"|"ease_out"|"ease_in_out"|"ease_out_expo"|"ease_out_back"|"ease_out_bounce"|"spring", "repeat"?: number|"infinite", "yoyo"?: boolean }
 
 Reference images (moodboard):
 When one or more reference images are attached to the user message, read them FIRST and treat them as the
