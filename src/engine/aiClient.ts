@@ -137,9 +137,9 @@ export async function runAiDirectorCommand(params: {
   const references = params.references ?? [];
   const referenceNote =
     references.length > 0
-      ? `\n\nAttached reference images (${references.length}): ${references
+      ? `\n\nAttached image(s) (${references.length}): ${references
           .map((r) => r.name)
-          .join(', ')}. Extract the palette, typography hierarchy, whitespace composition and visual rhythm from them and apply them to the scene.`
+          .join(', ')}. If an image is named "current-stage-*" or "stage-*", it is a live visual render of the CURRENT scene — inspect it carefully for overlapping elements, elements overflowing cards/margins, alignment, and contrast, and fix those visual issues. Otherwise treat attached images as moodboard style references (palette, typography, whitespace, rhythm).`
       : '';
   const videoNote = params.videoAnalysis
     ? `\n\n${formatVideoAnalysisForPrompt(params.videoAnalysis)}\nThe attached keyframes were extracted from this reference video and are listed in timeline order.`

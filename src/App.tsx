@@ -517,9 +517,40 @@ export default function App() {
     references: AiReferenceImage[] = [],
     videoAnalysis?: VideoAnalysisResult,
   ) => {
-    const combinedReferences = videoAnalysis
-      ? [...references, ...videoAnalysis.keyframes]
-      : references;
+    const stageSnapshotRef: AiReferenceImage[] = [];
+    if (mode === 'edit' && references.length === 0) {
+      try {
+        const snapCanvas = document.createElement('canvas');
+        const maxDim = 960;
+        const scale = Math.min(1, maxDim / Math.max(scene.canvas.width, scene.canvas.height));
+        snapCanvas.width = Math.max(1, Math.round(scene.canvas.width * scale));
+        snapCanvas.height = Math.max(1, Math.round(scene.canvas.height * scale));
+        const sctx = snapCanvas.getContext('2d');
+        if (sctx) {
+          sctx.scale(scale, scale);
+          renderRustrenFrame(sctx, scene, currentTime);
+          const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.82);
+          const base64 = dataUrl.split(',')[1] || '';
+          if (base64) {
+            stageSnapshotRef.push({
+              id: `stage_live_${Date.now()}`,
+              name: `current-stage-t${currentTime.toFixed(2)}s.jpg`,
+              mimeType: 'image/jpeg',
+              dataUrl,
+              base64,
+            });
+          }
+        }
+      } catch {
+        // ignore if canvas is tainted
+      }
+    }
+
+    const combinedReferences = [
+      ...stageSnapshotRef,
+      ...references,
+      ...(videoAnalysis ? videoAnalysis.keyframes : []),
+    ];
     const userMsg: AiChatMessage = {
       id: `u-${Date.now()}`,
       role: 'user',
