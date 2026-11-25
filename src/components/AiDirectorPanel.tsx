@@ -511,6 +511,20 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
                 )}
               </div>
               <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              {msg.role === 'error' && !isRunning && (() => {
+                const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+                if (!lastUser) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onSendCommand(lastUser.content, mode, references)}
+                    className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#3B181C] hover:bg-[#522127] border border-[#EF4444]/40 text-[11px] font-medium text-[#FCA5A5] hover:text-white transition-colors"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Retry</span>
+                  </button>
+                );
+              })()}
               {msg.autoRenderTriggered && (
                 <div className="mt-1.5 flex items-center gap-1 text-[11px] text-[#FDBA74]">
                   <Zap className="w-3 h-3" />

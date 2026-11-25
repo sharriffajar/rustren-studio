@@ -214,6 +214,12 @@ export default function App() {
   const [rightTab, setRightTab] = useState<'ai' | 'inspector'>('ai');
   const [frameNotes, setFrameNotes] = useState<FrameNote[]>(initialSaved?.frameNotes ?? []);
 
+  // Clamp playhead whenever scene duration shrinks (including duration_secs: 0)
+  useEffect(() => {
+    const maxDur = Math.max(0, scene.canvas.duration_secs || 0);
+    setCurrentTime((t) => (t > maxDur ? maxDur : t));
+  }, [scene.canvas.duration_secs]);
+
   // Auto-save active project to localStorage so refresh never loses work
   useEffect(() => {
     const timer = window.setTimeout(() => {

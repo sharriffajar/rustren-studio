@@ -76,7 +76,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
     try {
       const parsed = JSON.parse(jsonDraft) as RustrenScene;
       if (!parsed.canvas || !Array.isArray(parsed.layers)) {
-        setJsonError('JSON harus memiliki properti "canvas" dan array "layers".');
+        setJsonError('JSON must contain a "canvas" object and a "layers" array.');
         return;
       }
       setJsonError(null);

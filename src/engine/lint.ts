@@ -35,7 +35,16 @@ export function lintScene(scene: RustrenScene): LintWarning[] {
 
   const canvasW = scene.canvas.width || 1280;
   const canvasH = scene.canvas.height || 720;
-  const duration = scene.canvas.duration_secs || 5;
+  const rawDuration = scene.canvas.duration_secs;
+  if (typeof rawDuration !== 'number' || rawDuration <= 0) {
+    warnings.push({
+      code: 'schema',
+      path: 'canvas.duration_secs',
+      message: `canvas.duration_secs must be greater than 0 (got ${rawDuration}).`,
+      fix: 'Set canvas.duration_secs to at least 0.5s',
+    });
+  }
+  const duration = rawDuration > 0 ? rawDuration : 5;
   const bgHex = scene.canvas.background || '#000000';
   const isPortrait = canvasH > canvasW;
   const minFontPx = isPortrait ? 26 : 14;
@@ -153,7 +162,10 @@ export function lintScene(scene: RustrenScene): LintWarning[] {
  */
 export function autoFixScene(scene: RustrenScene): RustrenScene {
   const cloned: RustrenScene = JSON.parse(JSON.stringify(scene));
-  const duration = cloned.canvas.duration_secs || 5;
+  if (!cloned.canvas.duration_secs || cloned.canvas.duration_secs <= 0) {
+    cloned.canvas.duration_secs = 5;
+  }
+  const duration = cloned.canvas.duration_secs;
   const isPortrait = cloned.canvas.height > cloned.canvas.width;
   const minFontPx = isPortrait ? 26 : 14;
 
