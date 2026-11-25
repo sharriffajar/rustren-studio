@@ -581,33 +581,40 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
                   className="flex items-start justify-between gap-1.5 text-[11px] bg-[#0F1016] border border-[#272834] rounded px-1.5 py-1"
                 >
                   {editingNoteId === n.id ? (
-                    <form
-                      className="flex-1 flex items-center gap-1"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (editingNoteText.trim()) {
-                          onUpdateFrameNote(n.id, editingNoteText.trim());
-                        }
-                        setEditingNoteId(null);
-                      }}
-                    >
+                    <div className="flex-1 flex items-center gap-1">
                       <input
                         type="text"
                         autoFocus
                         value={editingNoteText}
                         onChange={(e) => setEditingNoteText(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Escape') setEditingNoteId(null);
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (editingNoteText.trim()) {
+                              onUpdateFrameNote(n.id, editingNoteText.trim());
+                            }
+                            setEditingNoteId(null);
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setEditingNoteId(null);
+                          }
                         }}
                         className="flex-1 min-w-0 bg-[#181924] border border-[#F97316] rounded px-1.5 py-0.5 text-[11px] text-white focus:outline-none"
                       />
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={() => {
+                          if (editingNoteText.trim()) {
+                            onUpdateFrameNote(n.id, editingNoteText.trim());
+                          }
+                          setEditingNoteId(null);
+                        }}
                         className="text-[10px] px-1.5 py-0.5 rounded bg-[#F97316] text-[#09090D] font-bold"
                       >
                         Save
                       </button>
-                    </form>
+                    </div>
                   ) : (
                     <button
                       type="button"
