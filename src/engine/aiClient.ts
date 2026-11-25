@@ -68,9 +68,20 @@ Authoring quality rules:
 - Return ONLY raw valid JSON without markdown code fences.`;
 
 function extractJsonObject(raw: string): { summary?: string; scene: RustrenScene } {
-  const trimmed = raw.trim();
+  // Strip <think>...</think> reasoning blocks emitted by reasoning models (e.g. Nemotron/DeepSeek)
+  const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
   const tryParse = (s: string) => {
-    const parsed = JSON.parse(s);
+    const parseCandidate = (text: string) => {
+      try {
+        return JSON.parse(text);
+      } catch {
+        // Fallback: strip trailing commas before } or ]
+        const noTrailingCommas = text.replace(/,\s*([}\]])/g, '$1');
+        return JSON.parse(noTrailingCommas);
+      }
+    };
+    const parsed = parseCandidate(s);
     if (parsed && parsed.scene && parsed.scene.canvas && Array.isArray(parsed.scene.layers)) {
       return parsed;
     }
@@ -79,16 +90,31 @@ function extractJsonObject(raw: string): { summary?: string; scene: RustrenScene
     }
     return null;
   };
+
+  // 1. Try fenced ```json ... ``` block first if present
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenceMatch) {
+    try {
+      const fromFence = tryParse(fenceMatch[1].trim());
+      if (fromFence) return fromFence;
+    } catch {
+      // continue to direct/slice fallbacks
+    }
+  }
+
+  // 2. Direct parse
   try {
-    const direct = tryParse(trimmed);
+    const direct = tryParse(cleaned);
     if (direct) return direct;
   } catch {
     // fallback to slicing outermost braces
   }
-  const start = trimmed.indexOf('{');
-  const end = trimmed.lastIndexOf('}');
+
+  // 3. Slice outermost { ... }
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
   if (start >= 0 && end > start) {
-    const sliced = tryParse(trimmed.slice(start, end + 1));
+    const sliced = tryParse(cleaned.slice(start, end + 1));
     if (sliced) return sliced;
   }
   throw new Error('AI response is not a valid Rustren scene JSON.');
