@@ -393,20 +393,20 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               }}
               className="w-full bg-[#171820] border border-[#2C2D39] rounded px-2 py-1 text-xs text-[#E4E4E7] focus:outline-none focus:border-[#F97316]"
             >
-              <option value="static">Statis</option>
-              <option value="typewriter">Typewriter (Ketik Otomatis)</option>
-              <option value="counter">Counter Angka</option>
+              <option value="static">Static</option>
+              <option value="typewriter">Typewriter</option>
+              <option value="counter">Counter</option>
               <option value="timecode">Live Timecode</option>
             </select>
           </div>
 
           {!layer.dynamic && (
             <textarea
-              rows={2}
+              rows={4}
               aria-label="Text content"
               value={layer.content || ''}
               onChange={(e) => update({ content: e.target.value })}
-              className="w-full bg-[#171820] border border-[#2C2D39] rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#F97316] resize-none"
+              className="w-full min-h-[84px] bg-[#171820] border border-[#2C2D39] rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#F97316] resize-y"
             />
           )}
 

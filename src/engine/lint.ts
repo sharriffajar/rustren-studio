@@ -73,12 +73,32 @@ export function lintScene(scene: RustrenScene): LintWarning[] {
           });
         }
         const fg = layer.color ?? '#FFFFFF';
-        const ratio = contrastRatio(fg, parentBg);
+        // Check if a solid rect layer below this text overlaps its anchor point
+        let effectiveBg = parentBg;
+        if (!inContainer && layer.x !== undefined && layer.y !== undefined) {
+          for (let j = idx - 1; j >= 0; j--) {
+            const below = layers[j];
+            if (below.type === 'rect' && below.color && (below.opacity ?? 1) >= 0.7 && !below.hidden) {
+              const rx = below.x ?? 0;
+              const ry = below.y ?? 0;
+              const rw = below.width ?? 0;
+              const rh = below.height ?? 0;
+              const isC = below.anchor === 'center';
+              const rLeft = isC ? rx - rw / 2 : rx;
+              const rTop = isC ? ry - rh / 2 : ry;
+              if (layer.x >= rLeft && layer.x <= rLeft + rw && layer.y >= rTop && layer.y <= rTop + rh) {
+                effectiveBg = below.color;
+                break;
+              }
+            }
+          }
+        }
+        const ratio = contrastRatio(fg, effectiveBg);
         if (ratio < 3.0) {
           warnings.push({
             code: 'low_contrast',
             path,
-            message: `Text "${layer.name || path}" has low contrast (${ratio.toFixed(1)}:1 against ${parentBg}).`,
+            message: `Text "${layer.name || path}" has low contrast (${ratio.toFixed(1)}:1 against ${effectiveBg}).`,
             fix: 'Use a higher contrast text color or background',
           });
         }

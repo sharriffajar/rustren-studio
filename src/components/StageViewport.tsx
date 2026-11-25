@@ -257,18 +257,18 @@ export const StageViewport: React.FC<StageViewportProps> = ({
       className="flex-1 flex flex-col min-w-0 min-h-0 bg-[#0B0C11]"
     >
       {/* Viewport Utility Sub-Bar */}
-      <div className="h-9 shrink-0 bg-[#14151C] border-b border-[#252630] px-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-[#8B8B96]">
+      <div className="h-9 shrink-0 bg-[#14151C] border-b border-[#252630] px-3 flex items-center justify-between gap-2 overflow-x-auto">
+        <div className="flex items-center gap-1.5 text-xs text-[#8B8B96] whitespace-nowrap shrink-0">
           <span className="font-semibold text-[#D4D4D8]">Preview</span>
           <span aria-hidden="true">·</span>
           <span className="font-mono text-[11px] tabular-nums">
             {scene.canvas.width}×{scene.canvas.height}
           </span>
-          <span aria-hidden="true">·</span>
-          <span className="font-mono text-[11px] tabular-nums">{fps} fps</span>
+          <span aria-hidden="true" className="hidden xl:inline">·</span>
+          <span className="hidden xl:inline font-mono text-[11px] tabular-nums">{fps} fps</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
           <div className="flex items-center bg-[#1A1B23] border border-[#272834] rounded p-0.5 text-[11px]">
             {(['fit', '75', '100'] as const).map((z) => (
               <button
@@ -320,7 +320,7 @@ export const StageViewport: React.FC<StageViewportProps> = ({
             ) : (
               <Cpu className="w-3.5 h-3.5" />
             )}
-            <span>Rustren Preview</span>
+            <span>Rustren</span>
           </button>
 
           <button
@@ -345,7 +345,7 @@ export const StageViewport: React.FC<StageViewportProps> = ({
             className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium bg-[#1A1B23] hover:bg-[#252634] border border-[#272834] text-[#D4D4D8] transition-colors"
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>Snapshot PNG</span>
+            <span>Snapshot</span>
           </button>
         </div>
       </div>

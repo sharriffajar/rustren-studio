@@ -61,12 +61,12 @@ function createNewLayer(type: Layer['type'], scene: RustrenScene): Layer {
     case 'text':
       return {
         type: 'text',
-        name: `Teks #${idx}`,
+        name: `Text #${idx}`,
         x: cx,
         y: cy,
         anchor: 'center',
         text_align: 'center',
-        content: 'Teks Baru',
+        content: 'New Text',
         font_size: 56,
         font_weight: 'bold',
         color: '#F8FAFC',
@@ -79,7 +79,7 @@ function createNewLayer(type: Layer['type'], scene: RustrenScene): Layer {
     case 'rect':
       return {
         type: 'rect',
-        name: `Kotak #${idx}`,
+        name: `Rect #${idx}`,
         x: cx,
         y: cy,
         width: 340,
@@ -95,7 +95,7 @@ function createNewLayer(type: Layer['type'], scene: RustrenScene): Layer {
     case 'circle':
       return {
         type: 'circle',
-        name: `Lingkaran #${idx}`,
+        name: `Circle #${idx}`,
         cx,
         cy,
         r: 90,
@@ -252,6 +252,7 @@ export default function App() {
 
   const commitScene = useCallback(
     (nextScene: RustrenScene) => {
+      if (JSON.stringify(nextScene) === JSON.stringify(scene)) return;
       setHistory((prev) => [...prev.slice(-39), scene]);
       setFuture([]);
       setScene(nextScene);
@@ -363,7 +364,7 @@ export default function App() {
     commitScene(JSON.parse(JSON.stringify(found.scene)));
     setCurrentTime(Math.min(1.5, found.scene.canvas.duration_secs / 2));
     setSelectedLayerIndex(found.scene.layers.length > 0 ? 0 : null);
-    showToast(`Preset dimuat: ${found.name}`);
+    showToast(`Preset loaded: ${found.name}`);
   };
 
   const handleImportFile = async (file: File) => {
@@ -380,7 +381,7 @@ export default function App() {
         setProjectName(file.name.replace(/\.json$/i, ''));
         setCurrentTime(0);
         setSelectedLayerIndex(parsed.layers.length > 0 ? 0 : null);
-        showToast(`Scene JSON dimuat: ${file.name}`);
+        showToast(`Scene JSON loaded: ${file.name}`);
       } else if (lower.endsWith('.html') || lower.endsWith('.htm')) {
         const text = await file.text();
         const compiled = compileRustrenHtml(text);
@@ -389,7 +390,7 @@ export default function App() {
         setProjectName(file.name.replace(/\.html?$/i, ''));
         setCurrentTime(0);
         setSelectedLayerIndex(compiled.layers.length > 0 ? 0 : null);
-        showToast(`Scene HTML dikompilasi: ${file.name}`);
+        showToast(`HTML scene compiled: ${file.name}`);
       } else if (file.type.startsWith('image/')) {
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
