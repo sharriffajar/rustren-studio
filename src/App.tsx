@@ -30,6 +30,31 @@ import type {
 import type { VideoAnalysisResult } from './engine/videoAnalyzer';
 
 const STORAGE_AI_KEY = 'rustren_studio_byok_config_v1';
+const STORAGE_AUTOSAVE_KEY = 'rustren_studio_autosave_v1';
+
+function loadAutosavedProject(): {
+  projectName: string;
+  activePresetId: string;
+  scene: RustrenScene;
+  frameNotes: FrameNote[];
+} | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_AUTOSAVE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.scene?.canvas && Array.isArray(parsed?.scene?.layers)) {
+      return {
+        projectName: typeof parsed.projectName === 'string' ? parsed.projectName : SCENE_PRESETS[0].name,
+        activePresetId: typeof parsed.activePresetId === 'string' ? parsed.activePresetId : 'custom',
+        scene: parsed.scene,
+        frameNotes: Array.isArray(parsed.frameNotes) ? parsed.frameNotes : [],
+      };
+    }
+  } catch {
+    // ignore corrupt autosave
+  }
+  return null;
+}
 
 function loadInitialAiConfig(): AiProviderConfig {
   const defaults: AiProviderConfig = {
@@ -165,10 +190,15 @@ function createNewLayer(type: Layer['type'], scene: RustrenScene): Layer {
 }
 
 export default function App() {
-  const [activePresetId, setActivePresetId] = useState<string>(SCENE_PRESETS[0].id);
-  const [projectName, setProjectName] = useState<string>(SCENE_PRESETS[0].name);
+  const initialSaved = useMemo(() => loadAutosavedProject(), []);
+  const [activePresetId, setActivePresetId] = useState<string>(
+    initialSaved?.activePresetId ?? SCENE_PRESETS[0].id
+  );
+  const [projectName, setProjectName] = useState<string>(
+    initialSaved?.projectName ?? SCENE_PRESETS[0].name
+  );
   const [scene, setScene] = useState<RustrenScene>(() =>
-    JSON.parse(JSON.stringify(SCENE_PRESETS[0].scene))
+    initialSaved?.scene ?? JSON.parse(JSON.stringify(SCENE_PRESETS[0].scene))
   );
   const [history, setHistory] = useState<RustrenScene[]>([]);
   const [future, setFuture] = useState<RustrenScene[]>([]);
@@ -176,11 +206,28 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState<number>(1.8);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [loop, setLoop] = useState<boolean>(true);
-  const [selectedLayerIndex, setSelectedLayerIndex] = useState<number | null>(4);
+  const [selectedLayerIndex, setSelectedLayerIndex] = useState<number | null>(
+    initialSaved ? (initialSaved.scene.layers.length > 0 ? 0 : null) : 4
+  );
 
   const [leftTab, setLeftTab] = useState<LeftTab>('layers');
   const [rightTab, setRightTab] = useState<'ai' | 'inspector'>('ai');
-  const [frameNotes, setFrameNotes] = useState<FrameNote[]>([]);
+  const [frameNotes, setFrameNotes] = useState<FrameNote[]>(initialSaved?.frameNotes ?? []);
+
+  // Auto-save active project to localStorage so refresh never loses work
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(
+          STORAGE_AUTOSAVE_KEY,
+          JSON.stringify({ projectName, activePresetId, scene, frameNotes })
+        );
+      } catch {
+        // ignore quota errors
+      }
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [projectName, activePresetId, scene, frameNotes]);
   const [exportOpen, setExportOpen] = useState<boolean>(false);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
