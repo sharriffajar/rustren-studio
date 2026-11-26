@@ -427,9 +427,33 @@ export default function App() {
     try {
       if (lower.endsWith('.json')) {
         const text = await file.text();
-        const parsed = JSON.parse(text) as RustrenScene;
-        if (!parsed.canvas || !Array.isArray(parsed.layers)) {
-          throw new Error('JSON file does not match Rustren schema (requires canvas & layers).');
+        const rawParsed = JSON.parse(text) as Record<string, unknown>;
+        // Auto-detect Bodymovin / Lottie JSON (has `fr` + `layers`, no `canvas`)
+        if (!rawParsed.canvas && Array.isArray(rawParsed.layers) && (typeof rawParsed.fr === 'number' || typeof rawParsed.v === 'string')) {
+          const size = Math.round(Math.min(scene.canvas.width, scene.canvas.height) * 0.45);
+          const lottieLayer: Layer = {
+            type: 'lottie',
+            name: file.name.replace(/\.json$/i, ''),
+            src: text,
+            anchor: 'center',
+            x: Math.round(scene.canvas.width / 2),
+            y: Math.round(scene.canvas.height / 2),
+            width: size,
+            height: size,
+            loop_animation: true,
+            speed: 1,
+            start_sec: 0,
+            end_sec: scene.canvas.duration_secs || 5,
+          };
+          const nextLayers = [...scene.layers, lottieLayer];
+          commitScene({ ...scene, layers: nextLayers });
+          setSelectedLayerIndex(nextLayers.length - 1);
+          showToast(`Lottie animation imported: ${file.name}`);
+          return;
+        }
+        const parsed = validateAndNormalizeScene(rawParsed);
+        if (!parsed) {
+          throw new Error('JSON file does not match Rustren scene or Lottie schema.');
         }
         commitScene(parsed);
         setActivePresetId('custom');
