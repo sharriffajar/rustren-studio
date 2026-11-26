@@ -355,6 +355,21 @@ export interface ImageLayer extends BaseLayer {
   radius?: number;
 }
 
+export interface VideoLayer extends BaseLayer {
+  type: 'video';
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  src: string;
+  fit?: FitMode;
+  loop?: boolean;
+  playback_rate?: number;
+  rotation?: number;
+  scale?: number;
+  radius?: number;
+}
+
 export interface WaveformLayer extends BaseLayer {
   type: 'waveform';
   x?: number;
@@ -420,6 +435,7 @@ export type Layer =
   | TextLayer
   | SvgLayer
   | ImageLayer
+  | VideoLayer
   | WaveformLayer
   | ParticlesLayer
   | ContainerLayer;

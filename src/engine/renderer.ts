@@ -27,6 +27,34 @@ export interface LayerBounds {
 
 const imageCache = new Map<string, HTMLImageElement | 'loading' | 'error'>();
 const svgCache = new Map<string, HTMLImageElement | 'loading' | 'error'>();
+const videoCache = new Map<string, HTMLVideoElement | 'loading' | 'error'>();
+
+function getCachedVideo(src: string, onLoad?: () => void): HTMLVideoElement | null {
+  if (!src || typeof document === 'undefined') return null;
+  const cached = videoCache.get(src);
+  if (cached instanceof HTMLVideoElement) return cached;
+  if (cached === 'loading' || cached === 'error') return null;
+
+  videoCache.set(src, 'loading');
+  const vid = document.createElement('video');
+  vid.crossOrigin = 'anonymous';
+  vid.muted = true;
+  vid.playsInline = true;
+  vid.preload = 'auto';
+  vid.onloadeddata = () => {
+    videoCache.set(src, vid);
+    onLoad?.();
+  };
+  vid.onseeked = () => {
+    onLoad?.();
+  };
+  vid.onerror = () => {
+    videoCache.set(src, 'error');
+  };
+  vid.src = src;
+  vid.load();
+  return null;
+}
 
 function getCachedImage(src: string, onLoad?: () => void): HTMLImageElement | null {
   if (!src) return null;
@@ -898,6 +926,50 @@ function renderLayerCore(
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Image Layer', 0, 0);
+    }
+  } else if (layer.type === 'video') {
+    const w = Math.max(10, props.width || 640);
+    const h = Math.max(10, props.height || 360);
+    const [ox, oy] = getAnchorOffset(layer.anchor, w, h);
+    const px = originX + props.x;
+    const py = originY + props.y;
+
+    if (rootIndex !== null && options.collectBounds) {
+      options.collectBounds.push({ layerIndex: rootIndex, x: px + ox, y: py + oy, width: w, height: h });
+    }
+
+    const vid = getCachedVideo(layer.src, options.onAssetLoad);
+    applyTransform(ctx, px + ox + w / 2, py + oy + h / 2, props);
+    if (layer.radius && layer.radius > 0) {
+      drawRoundedRectPath(ctx, -w / 2, -h / 2, w, h, layer.radius);
+      ctx.clip();
+    }
+    if (vid && vid.readyState >= 2 && vid.videoWidth > 0) {
+      const localT = Math.max(0, (timeSec - (layer.start_sec ?? 0)) * (layer.playback_rate ?? 1));
+      const vDur = vid.duration && Number.isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 2.5;
+      const targetT = layer.loop !== false ? localT % vDur : Math.min(localT, Math.max(0, vDur - 0.03));
+      if (Math.abs(vid.currentTime - targetT) > 0.04 && !vid.seeking) {
+        try {
+          vid.currentTime = targetT;
+        } catch {
+          // ignore seek error
+        }
+      }
+      const fit = layer.fit || 'cover';
+      if (fit === 'fill') {
+        ctx.drawImage(vid, -w / 2, -h / 2, w, h);
+      } else {
+        const ir = vid.videoWidth / vid.videoHeight;
+        const br = w / h;
+        let dw = w;
+        let dh = h;
+        if ((fit === 'cover' && ir > br) || (fit === 'contain' && ir < br)) {
+          dw = h * ir;
+        } else {
+          dh = w / ir;
+        }
+        ctx.drawImage(vid, -dw / 2, -dh / 2, dw, dh);
+      }
     }
   } else if (layer.type === 'container') {
     renderContainer(ctx, layer, rootIndex, props, timeSec, durationSecs, finalOpacity, originX, originY, options, layerById, canvasW, canvasH);

@@ -35,6 +35,7 @@ export interface CatalogAsset {
   tintable?: boolean;
   track_matte?: string;
   duration_sec?: number;
+  is_video?: boolean;
   paired_sfx?: string;
   license?: string;
 }
@@ -62,6 +63,7 @@ const LAYER_BADGE: Record<Layer['type'], string> = {
   text: 'TEXT',
   svg: 'SVG',
   image: 'IMG',
+  video: 'VID',
   waveform: 'WAVE',
   particles: 'PART',
   container: 'CONT',
@@ -517,7 +519,17 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                               className={`w-full h-full ${it.kind === 'prop' ? 'object-contain p-1' : 'object-cover'} group-hover:scale-105 transition-transform`}
                             />
                             <span className="absolute top-1 right-1 px-1 py-0.5 rounded bg-black/75 font-mono text-[9px] text-[#FDBA74] uppercase">
-                              {it.kind === 'matte' ? 'luma' : it.kind === 'prop' ? '3d' : it.blend !== 'normal' ? it.blend : 'bg'}
+                              {it.is_video
+                                ? it.kind === 'matte'
+                                  ? 'vid·luma'
+                                  : 'vid·fx'
+                                : it.kind === 'matte'
+                                  ? 'luma'
+                                  : it.kind === 'prop'
+                                    ? '3d'
+                                    : it.blend !== 'normal'
+                                      ? it.blend
+                                      : 'bg'}
                             </span>
                           </div>
                           <div className="px-1.5 py-1 text-[10px] font-medium text-[#E4E4E7] truncate">

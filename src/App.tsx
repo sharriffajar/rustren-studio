@@ -802,25 +802,47 @@ export default function App() {
               showToast(`3D Prop added: ${asset.title}`);
               return;
             }
-            const imgLayer: Layer = {
-              type: 'image',
-              name: asset.title,
-              src: fullUrl,
-              anchor: 'center',
-              x: Math.round(scene.canvas.width / 2),
-              y: Math.round(scene.canvas.height / 2),
-              width: scene.canvas.width,
-              height: scene.canvas.height,
-              fit: 'cover',
-              start_sec: 0,
-              end_sec: dur,
-              ...(asset.kind === 'overlay'
-                ? {
-                    blend_mode: (asset.blend || 'screen') as Layer['blend_mode'],
-                    opacity: 0.65,
-                  }
-                : {}),
-            };
+            const mediaLayer: Layer = asset.is_video
+              ? {
+                  type: 'video',
+                  name: asset.title,
+                  src: fullUrl,
+                  anchor: 'center',
+                  x: Math.round(scene.canvas.width / 2),
+                  y: Math.round(scene.canvas.height / 2),
+                  width: scene.canvas.width,
+                  height: scene.canvas.height,
+                  fit: 'cover',
+                  loop: true,
+                  start_sec: 0,
+                  end_sec: dur,
+                  ...(asset.kind === 'overlay'
+                    ? {
+                        blend_mode: (asset.blend || 'screen') as Layer['blend_mode'],
+                        opacity: 0.75,
+                      }
+                    : {}),
+                }
+              : {
+                  type: 'image',
+                  name: asset.title,
+                  src: fullUrl,
+                  anchor: 'center',
+                  x: Math.round(scene.canvas.width / 2),
+                  y: Math.round(scene.canvas.height / 2),
+                  width: scene.canvas.width,
+                  height: scene.canvas.height,
+                  fit: 'cover',
+                  start_sec: 0,
+                  end_sec: dur,
+                  ...(asset.kind === 'overlay'
+                    ? {
+                        blend_mode: (asset.blend || 'screen') as Layer['blend_mode'],
+                        opacity: 0.65,
+                      }
+                    : {}),
+                };
+            const imgLayer = mediaLayer;
             if (asset.kind === 'matte' && selectedLayerIndex !== null && scene.layers[selectedLayerIndex]) {
               const copy = [...scene.layers];
               copy[selectedLayerIndex] = {

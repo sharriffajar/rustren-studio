@@ -732,5 +732,98 @@
     "src": "media/prop-spark-star.png",
     "blend": "normal",
     "tintable": false
+  },
+  {
+    "id": "vid-ink-wipe",
+    "kind": "matte",
+    "title": "Animated Ink Wipe",
+    "tags": [
+      "video",
+      "ink",
+      "matte"
+    ],
+    "thumb": "thumbs/vid-ink-wipe.jpg",
+    "src": "media/vid-ink-wipe.mp4",
+    "blend": "normal",
+    "is_video": true,
+    "duration_sec": 2.5,
+    "track_matte": "luma"
+  },
+  {
+    "id": "vid-smoke-reveal",
+    "kind": "matte",
+    "title": "Animated Smoke Reveal",
+    "tags": [
+      "video",
+      "smoke",
+      "matte"
+    ],
+    "thumb": "thumbs/vid-smoke-reveal.jpg",
+    "src": "media/vid-smoke-reveal.mp4",
+    "blend": "normal",
+    "is_video": true,
+    "duration_sec": 2.5,
+    "track_matte": "luma"
+  },
+  {
+    "id": "vid-diagonal-blinds",
+    "kind": "matte",
+    "title": "Animated Diagonal Wipe",
+    "tags": [
+      "video",
+      "geometric",
+      "matte"
+    ],
+    "thumb": "thumbs/vid-diagonal-blinds.jpg",
+    "src": "media/vid-diagonal-blinds.mp4",
+    "blend": "normal",
+    "is_video": true,
+    "duration_sec": 2.5,
+    "track_matte": "luma"
+  },
+  {
+    "id": "vid-light-leak",
+    "kind": "overlay",
+    "title": "Animated Light Leak",
+    "tags": [
+      "video",
+      "flare",
+      "screen"
+    ],
+    "thumb": "thumbs/vid-light-leak.jpg",
+    "src": "media/vid-light-leak.mp4",
+    "blend": "screen",
+    "is_video": true,
+    "duration_sec": 2.5
+  },
+  {
+    "id": "vid-bokeh-drift",
+    "kind": "overlay",
+    "title": "Animated Bokeh Drift",
+    "tags": [
+      "video",
+      "bokeh",
+      "screen"
+    ],
+    "thumb": "thumbs/vid-bokeh-drift.jpg",
+    "src": "media/vid-bokeh-drift.mp4",
+    "blend": "screen",
+    "is_video": true,
+    "duration_sec": 2.5
+  },
+  {
+    "id": "vid-film-burn",
+    "kind": "overlay",
+    "title": "Animated Film Burn",
+    "tags": [
+      "video",
+      "burn",
+      "screen"
+    ],
+    "thumb": "thumbs/vid-film-burn.jpg",
+    "src": "media/vid-film-burn.mp4",
+    "blend": "screen",
+    "is_video": true,
+    "duration_sec": 2.5
   }
 ]
