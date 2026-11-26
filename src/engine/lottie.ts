@@ -62,19 +62,25 @@ function firstNum(v: unknown, def: number): number {
 
 function evalVecN(prop: Record<string, unknown> | undefined, frame: number, def: number[]): number[] {
   if (!prop || prop.k === undefined) return def;
-  if (prop.a !== 1) return toFloats(prop.k, def);
-  const kfs = prop.k as Array<Record<string, unknown>>;
-  if (!Array.isArray(kfs) || kfs.length === 0) return def;
+  const kArr = Array.isArray(prop.k) ? (prop.k as Array<Record<string, unknown>>) : null;
+  const animated =
+    prop.a === 1 ||
+    (kArr !== null && kArr.length > 0 && typeof kArr[0] === 'object' && kArr[0] !== null && 't' in kArr[0]);
+  if (!animated || !kArr || kArr.length === 0) return toFloats(prop.k, def);
+  const kfs = kArr;
   const t0 = typeof kfs[0].t === 'number' ? kfs[0].t : 0;
   if (frame <= t0) return toFloats(kfs[0].s, def);
 
   for (let i = 0; i < kfs.length; i++) {
     const cur = kfs[i];
     const tCur = typeof cur.t === 'number' ? cur.t : 0;
-    if (i + 1 >= kfs.length) return toFloats(cur.s, def);
+    if (i + 1 >= kfs.length) {
+      const termVal = cur.s !== undefined ? cur.s : (i > 0 ? kfs[i - 1].e : undefined);
+      return toFloats(termVal, def);
+    }
     const next = kfs[i + 1];
     const tNext = typeof next.t === 'number' ? next.t : tCur;
-    if (frame >= tCur && frame <= tNext) {
+    if (frame >= tCur && frame < tNext) {
       const sVals = toFloats(cur.s, def);
       if (cur.h === 1 || tNext <= tCur) return sVals;
       const eVals = toFloats(cur.e ?? next.s, sVals);
