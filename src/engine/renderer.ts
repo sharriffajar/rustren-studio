@@ -658,7 +658,8 @@ function renderLayerCore(
         : (layer.content ?? '');
 
     const lines = wrapTextLines(ctx, rawText, layer.max_width);
-    const lineHeight = (layer.line_height ?? fontSize * 1.25) * (layer.line_height ? props.scale : 1);
+    const rawLh = layer.line_height ?? 1.25;
+    const lineHeight = rawLh <= 4 ? fontSize * rawLh : rawLh * props.scale;
     const measuredWidths = lines.map((l) => ctx.measureText(l).width);
     const boxW = Math.max(10, ...measuredWidths);
     const boxH = Math.max(fontSize, lines.length * lineHeight);
