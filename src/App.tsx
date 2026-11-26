@@ -767,6 +767,19 @@ export default function App() {
           }}
           onAddLayer={handleAddLayer}
           onInsertCatalogAsset={(asset: CatalogAsset, fullUrl: string) => {
+            if (asset.kind === 'audio') {
+              const nextAudio = [
+                ...(scene.audio || []),
+                {
+                  src: fullUrl,
+                  start_sec: Number(currentTime.toFixed(2)),
+                  volume: asset.tags.includes('music') ? 0.35 : 0.85,
+                },
+              ];
+              commitScene({ ...scene, audio: nextAudio });
+              showToast(`Audio added at t=${currentTime.toFixed(2)}s: ${asset.title}`);
+              return;
+            }
             const dur = scene.canvas.duration_secs || 5;
             const imgLayer: Layer = {
               type: 'image',

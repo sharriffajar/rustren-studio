@@ -123,7 +123,8 @@
     "thumb": "thumbs/ov-anamorphic-flare.jpg",
     "src": "media/ov-anamorphic-flare.jpg",
     "blend": "screen",
-    "tintable": true
+    "tintable": true,
+    "paired_sfx": "sfx-15-snd.riser.glitch_stu"
   },
   {
     "id": "ov-bokeh-soft",
@@ -179,7 +180,8 @@
     "thumb": "thumbs/ov-crt-scanlines.jpg",
     "src": "media/ov-crt-scanlines.jpg",
     "blend": "overlay",
-    "tintable": false
+    "tintable": false,
+    "paired_sfx": "sfx-15-snd.riser.glitch_stu"
   },
   {
     "id": "ov-vignette-soft",
@@ -208,7 +210,8 @@
     "src": "media/mt-ink-bleed.jpg",
     "blend": "normal",
     "tintable": false,
-    "track_matte": "luma"
+    "track_matte": "luma",
+    "paired_sfx": "sfx-01-snd.trailer.whoosh_b"
   },
   {
     "id": "mt-brush-sweep",
@@ -223,7 +226,8 @@
     "src": "media/mt-brush-sweep.jpg",
     "blend": "normal",
     "tintable": false,
-    "track_matte": "luma"
+    "track_matte": "luma",
+    "paired_sfx": "sfx-01-snd.trailer.whoosh_b"
   },
   {
     "id": "mt-smoke-reveal",
@@ -238,7 +242,8 @@
     "src": "media/mt-smoke-reveal.jpg",
     "blend": "normal",
     "tintable": false,
-    "track_matte": "luma"
+    "track_matte": "luma",
+    "paired_sfx": "sfx-15-snd.riser.glitch_stu"
   },
   {
     "id": "mt-geometric-split",
@@ -253,6 +258,311 @@
     "src": "media/mt-geometric-split.jpg",
     "blend": "normal",
     "tintable": false,
-    "track_matte": "luma"
+    "track_matte": "luma",
+    "paired_sfx": "sfx-05-snd.hit.bass_drop_wo"
+  },
+  {
+    "id": "sfx-01-snd.trailer.whoosh_b",
+    "kind": "audio",
+    "title": "SFX: Snd.Trailer.Whoosh By",
+    "tags": [
+      "sfx",
+      "whoosh",
+      "cc0"
+    ],
+    "src": "audio/sfx-01-snd.trailer.whoosh_b.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 1.85,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-02-snd.trailer.whoosh_s",
+    "kind": "audio",
+    "title": "SFX: Snd.Trailer.Whoosh Suck",
+    "tags": [
+      "sfx",
+      "whoosh",
+      "cc0"
+    ],
+    "src": "audio/sfx-02-snd.trailer.whoosh_s.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.96,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-03-snd.cloth.swish",
+    "kind": "audio",
+    "title": "SFX: Snd.Cloth.Swish",
+    "tags": [
+      "sfx",
+      "swish",
+      "cc0"
+    ],
+    "src": "audio/sfx-03-snd.cloth.swish.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.34,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-04-snd.whoosh.swish_out",
+    "kind": "audio",
+    "title": "SFX: Snd.Whoosh.Swish Out",
+    "tags": [
+      "sfx",
+      "swish",
+      "cc0"
+    ],
+    "src": "audio/sfx-04-snd.whoosh.swish_out.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.24,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-05-snd.hit.bass_drop_wo",
+    "kind": "audio",
+    "title": "SFX: Snd.Hit.Bass Drop Wobble",
+    "tags": [
+      "sfx",
+      "impact",
+      "cc0"
+    ],
+    "src": "audio/sfx-05-snd.hit.bass_drop_wo.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 1.66,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-06-snd.hit.boom_meme",
+    "kind": "audio",
+    "title": "SFX: Snd.Hit.Boom Meme",
+    "tags": [
+      "sfx",
+      "impact",
+      "cc0"
+    ],
+    "src": "audio/sfx-06-snd.hit.boom_meme.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 1.44,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-07-snd.hw.sub_hit",
+    "kind": "audio",
+    "title": "SFX: Snd.Hw.Sub Hit",
+    "tags": [
+      "sfx",
+      "hit",
+      "cc0"
+    ],
+    "src": "audio/sfx-07-snd.hw.sub_hit.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 2.23,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-08-snd.hit.braam",
+    "kind": "audio",
+    "title": "SFX: Snd.Hit.Braam",
+    "tags": [
+      "sfx",
+      "hit",
+      "cc0"
+    ],
+    "src": "audio/sfx-08-snd.hit.braam.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 3.34,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-09-snd.device.mouse_cli",
+    "kind": "audio",
+    "title": "SFX: Snd.Device.Mouse Click",
+    "tags": [
+      "sfx",
+      "click",
+      "cc0"
+    ],
+    "src": "audio/sfx-09-snd.device.mouse_cli.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.1,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-10-snd.foley.pen_click",
+    "kind": "audio",
+    "title": "SFX: Snd.Foley.Pen Click",
+    "tags": [
+      "sfx",
+      "click",
+      "cc0"
+    ],
+    "src": "audio/sfx-10-snd.foley.pen_click.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.12,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-11-snd.cartoon.pop_eye",
+    "kind": "audio",
+    "title": "SFX: Snd.Cartoon.Pop Eye",
+    "tags": [
+      "sfx",
+      "pop",
+      "cc0"
+    ],
+    "src": "audio/sfx-11-snd.cartoon.pop_eye.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.48,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-12-snd.ui.pop",
+    "kind": "audio",
+    "title": "SFX: Snd.Ui.Pop",
+    "tags": [
+      "sfx",
+      "pop",
+      "cc0"
+    ],
+    "src": "audio/sfx-12-snd.ui.pop.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.14,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-13-snd.lift.down",
+    "kind": "audio",
+    "title": "SFX: Snd.Lift.Down",
+    "tags": [
+      "sfx",
+      "riser",
+      "cc0"
+    ],
+    "src": "audio/sfx-13-snd.lift.down.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.91,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-14-snd.lift.down_long",
+    "kind": "audio",
+    "title": "SFX: Snd.Lift.Down Long",
+    "tags": [
+      "sfx",
+      "riser",
+      "cc0"
+    ],
+    "src": "audio/sfx-14-snd.lift.down_long.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 1.94,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-15-snd.riser.glitch_stu",
+    "kind": "audio",
+    "title": "SFX: Snd.Riser.Glitch Stutter",
+    "tags": [
+      "sfx",
+      "glitch",
+      "cc0"
+    ],
+    "src": "audio/sfx-15-snd.riser.glitch_stu.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 2.04,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "sfx-16-snd.tx.glitch_stutte",
+    "kind": "audio",
+    "title": "SFX: Snd.Tx.Glitch Stutter",
+    "tags": [
+      "sfx",
+      "glitch",
+      "cc0"
+    ],
+    "src": "audio/sfx-16-snd.tx.glitch_stutte.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 0.38,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "bgm-01-bed_acoustic_folk_pl",
+    "kind": "audio",
+    "title": "Bed: Bed Acoustic Folk Pluck Loop8",
+    "tags": [
+      "music",
+      "bed",
+      "bed",
+      "cc0"
+    ],
+    "src": "audio/bgm-01-bed_acoustic_folk_pl.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 15.02,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "bgm-02-bed_ambient_pad_loop",
+    "kind": "audio",
+    "title": "Bed: Bed Ambient Pad Loop8",
+    "tags": [
+      "music",
+      "bed",
+      "ambient",
+      "cc0"
+    ],
+    "src": "audio/bgm-02-bed_ambient_pad_loop.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 15.02,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "bgm-03-bed_suspense_pulse_l",
+    "kind": "audio",
+    "title": "Bed: Bed Suspense Pulse Loop8",
+    "tags": [
+      "music",
+      "bed",
+      "pulse",
+      "cc0"
+    ],
+    "src": "audio/bgm-03-bed_suspense_pulse_l.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 15.02,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "bgm-04-bed_orchestral_synth",
+    "kind": "audio",
+    "title": "Bed: Bed Orchestral Synth Epic Loop8",
+    "tags": [
+      "music",
+      "bed",
+      "synth",
+      "cc0"
+    ],
+    "src": "audio/bgm-04-bed_orchestral_synth.mp3",
+    "thumb": "",
+    "blend": "normal",
+    "duration_sec": 15.02,
+    "license": "CC0-1.0 (ANVEAI/motion-pack)"
   }
 ]

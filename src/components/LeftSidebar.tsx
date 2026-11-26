@@ -16,6 +16,7 @@ import {
   Square,
   Trash2,
   Type,
+  Volume2,
   Wrench,
 } from 'lucide-react';
 import { validateAndNormalizeScene } from '../engine/lint';
@@ -25,7 +26,7 @@ export type LeftTab = 'layers' | 'assets' | 'json' | 'lint';
 
 export interface CatalogAsset {
   id: string;
-  kind: 'backdrop' | 'overlay' | 'matte';
+  kind: 'backdrop' | 'overlay' | 'matte' | 'audio';
   title: string;
   tags: string[];
   thumb: string;
@@ -33,6 +34,9 @@ export interface CatalogAsset {
   blend: string;
   tintable?: boolean;
   track_matte?: string;
+  duration_sec?: number;
+  paired_sfx?: string;
+  license?: string;
 }
 
 interface LeftSidebarProps {
@@ -82,8 +86,28 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   const [jsonDraft, setJsonDraft] = useState(() => JSON.stringify(scene, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [catalogItems, setCatalogItems] = useState<CatalogAsset[]>([]);
-  const [catalogFilter, setCatalogFilter] = useState<'all' | 'backdrop' | 'overlay' | 'matte'>('all');
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'backdrop' | 'overlay' | 'matte' | 'audio'>('all');
   const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const previewAudioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  const toggleAudioPreview = (id: string, url: string) => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    if (playingAudioId === id) {
+      setPlayingAudioId(null);
+      return;
+    }
+    const audio = new Audio(url);
+    audio.volume = 0.85;
+    audio.onended = () => setPlayingAudioId(null);
+    audio.onerror = () => setPlayingAudioId(null);
+    previewAudioRef.current = audio;
+    setPlayingAudioId(id);
+    void audio.play().catch(() => setPlayingAudioId(null));
+  };
 
   const catalogBase = `${import.meta.env.BASE_URL}assets/catalog/`;
 
@@ -388,59 +412,137 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       {/* TAB 1B: ASSETS CATALOG */}
       {activeTab === 'assets' && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="p-2 border-b border-[#252630] bg-[#14151C] flex items-center gap-1">
-            {(['all', 'backdrop', 'overlay', 'matte'] as const).map((k) => (
+          <div className="p-2 border-b border-[#252630] bg-[#14151C] flex flex-wrap items-center gap-1">
+            {(['all', 'backdrop', 'overlay', 'matte', 'audio'] as const).map((k) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => setCatalogFilter(k)}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium capitalize transition-colors ${
+                className={`px-1.5 py-0.5 rounded text-[10px] font-medium capitalize transition-colors ${
                   catalogFilter === k
                     ? 'bg-[#F97316] text-[#09090D]'
                     : 'bg-[#1B1C25] text-[#A1A1AA] hover:text-white'
                 }`}
               >
-                {k === 'all' ? 'All' : `${k}s`}
+                {k === 'all' ? 'All' : k === 'audio' ? 'Audio' : `${k}s`}
               </button>
             ))}
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            <div className="grid grid-cols-2 gap-2">
-              {catalogItems
-                .filter((it) => catalogFilter === 'all' || it.kind === catalogFilter)
-                .map((it) => {
-                  const thumbUrl = `${catalogBase}${it.thumb}`;
-                  const fullUrl = new URL(`${catalogBase}${it.src}`, window.location.origin).href;
-                  return (
-                    <button
-                      key={it.id}
-                      type="button"
-                      onClick={() => onInsertCatalogAsset(it, fullUrl)}
-                      title={
-                        it.kind === 'matte'
-                          ? 'Apply as Luma Track Matte to selected layer (or insert)'
-                          : `Insert ${it.title} (${it.blend})`
-                      }
-                      className="group text-left rounded border border-[#252632] bg-[#161720] hover:border-[#F97316] overflow-hidden transition-colors"
-                    >
-                      <div className="aspect-video bg-black overflow-hidden relative">
-                        <img
-                          src={thumbUrl}
-                          alt={it.title}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
-                        <span className="absolute top-1 right-1 px-1 py-0.5 rounded bg-black/75 font-mono text-[9px] text-[#FDBA74] uppercase">
-                          {it.kind === 'matte' ? 'luma' : it.blend !== 'normal' ? it.blend : 'bg'}
-                        </span>
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+            {/* Audio list when Audio or All is selected */}
+            {(catalogFilter === 'audio' || catalogFilter === 'all') &&
+              catalogItems.some((it) => it.kind === 'audio') && (
+                <div className="space-y-1">
+                  {catalogFilter === 'all' && (
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-[#71717A] px-0.5">
+                      CC0 Audio (SFX &amp; Beds)
+                    </div>
+                  )}
+                  {catalogItems
+                    .filter((it) => it.kind === 'audio')
+                    .map((it) => {
+                      const fullUrl = new URL(`${catalogBase}${it.src}`, window.location.origin).href;
+                      const isPlayingThis = playingAudioId === it.id;
+                      return (
+                        <div
+                          key={it.id}
+                          className="flex items-center gap-1.5 px-2 py-1.5 rounded border border-[#252632] bg-[#161720] hover:border-[#F97316]/70 transition-colors"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleAudioPreview(it.id, fullUrl)}
+                            title={isPlayingThis ? 'Stop preview' : 'Preview sound'}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                              isPlayingThis
+                                ? 'bg-[#F97316] text-[#09090D]'
+                                : 'bg-[#232533] text-[#D4D4D8] hover:text-white'
+                            }`}
+                          >
+                            <Volume2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onInsertCatalogAsset(it, fullUrl)}
+                            title="Add audio track at current playhead"
+                            className="flex-1 min-w-0 text-left"
+                          >
+                            <div className="text-[11px] font-medium text-[#E4E4E7] truncate">
+                              {it.title}
+                            </div>
+                            <div className="text-[9px] font-mono text-[#71717A]">
+                              {it.duration_sec ? `${it.duration_sec}s` : 'mp3'} · CC0
+                            </div>
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+            {/* Visual Grid (Backdrops, Overlays, Mattes) */}
+            {catalogFilter !== 'audio' && (
+              <div className="grid grid-cols-2 gap-2">
+                {catalogItems
+                  .filter(
+                    (it) =>
+                      it.kind !== 'audio' &&
+                      (catalogFilter === 'all' || it.kind === catalogFilter)
+                  )
+                  .map((it) => {
+                    const thumbUrl = `${catalogBase}${it.thumb}`;
+                    const fullUrl = new URL(`${catalogBase}${it.src}`, window.location.origin).href;
+                    const pairedAudio = it.paired_sfx
+                      ? catalogItems.find((a) => a.id === it.paired_sfx)
+                      : undefined;
+                    return (
+                      <div
+                        key={it.id}
+                        className="group rounded border border-[#252632] bg-[#161720] hover:border-[#F97316] overflow-hidden transition-colors flex flex-col"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => onInsertCatalogAsset(it, fullUrl)}
+                          title={
+                            it.kind === 'matte'
+                              ? 'Apply as Luma Track Matte to selected layer (or insert)'
+                              : `Insert ${it.title} (${it.blend})`
+                          }
+                          className="text-left w-full"
+                        >
+                          <div className="aspect-video bg-black overflow-hidden relative">
+                            <img
+                              src={thumbUrl}
+                              alt={it.title}
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <span className="absolute top-1 right-1 px-1 py-0.5 rounded bg-black/75 font-mono text-[9px] text-[#FDBA74] uppercase">
+                              {it.kind === 'matte' ? 'luma' : it.blend !== 'normal' ? it.blend : 'bg'}
+                            </span>
+                          </div>
+                          <div className="px-1.5 py-1 text-[10px] font-medium text-[#E4E4E7] truncate">
+                            {it.title}
+                          </div>
+                        </button>
+                        {pairedAudio && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const sfxUrl = new URL(`${catalogBase}${pairedAudio.src}`, window.location.origin).href;
+                              onInsertCatalogAsset(pairedAudio, sfxUrl);
+                            }}
+                            title={`Add paired SFX: ${pairedAudio.title}`}
+                            className="px-1.5 py-0.5 border-t border-[#22232F] bg-[#12131A] hover:bg-[#1E202C] text-[9px] text-[#FDBA74] flex items-center gap-1 truncate"
+                          >
+                            <Volume2 className="w-2.5 h-2.5 shrink-0" />
+                            <span className="truncate">+ {pairedAudio.title.replace(/^SFX:\s*/i, '')}</span>
+                          </button>
+                        )}
                       </div>
-                      <div className="px-1.5 py-1 text-[10px] font-medium text-[#E4E4E7] truncate">
-                        {it.title}
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
+                    );
+                  })}
+              </div>
+            )}
             {!catalogLoaded && (
               <div className="text-center text-xs text-[#71717A] py-8">Loading studio assets...</div>
             )}
