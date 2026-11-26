@@ -3,7 +3,7 @@ import { Sliders, Sparkles } from 'lucide-react';
 import { AiDirectorPanel } from './components/AiDirectorPanel';
 import { ExportModal } from './components/ExportModal';
 import { InspectorPanel } from './components/InspectorPanel';
-import { LeftSidebar, type LeftTab } from './components/LeftSidebar';
+import { LeftSidebar, type CatalogAsset, type LeftTab } from './components/LeftSidebar';
 import { StageViewport } from './components/StageViewport';
 import { TimelinePanel } from './components/TimelinePanel';
 import { TopBar } from './components/TopBar';
@@ -764,6 +764,48 @@ export default function App() {
             if (idx !== null) setRightTab('inspector');
           }}
           onAddLayer={handleAddLayer}
+          onInsertCatalogAsset={(asset: CatalogAsset, fullUrl: string) => {
+            const dur = scene.canvas.duration_secs || 5;
+            const imgLayer: Layer = {
+              type: 'image',
+              name: asset.title,
+              src: fullUrl,
+              x: 0,
+              y: 0,
+              width: scene.canvas.width,
+              height: scene.canvas.height,
+              fit: 'cover',
+              start_sec: 0,
+              end_sec: dur,
+              ...(asset.kind === 'overlay'
+                ? {
+                    blend_mode: (asset.blend || 'screen') as Layer['blend_mode'],
+                    opacity: 0.65,
+                  }
+                : {}),
+            };
+            if (asset.kind === 'matte' && selectedLayerIndex !== null && scene.layers[selectedLayerIndex]) {
+              const copy = [...scene.layers];
+              copy[selectedLayerIndex] = {
+                ...copy[selectedLayerIndex],
+                track_matte: 'luma',
+                matte_layer: imgLayer,
+              };
+              commitScene({ ...scene, layers: copy });
+              showToast(`Applied "${asset.title}" as Luma Track Matte.`);
+              return;
+            }
+            if (asset.kind === 'backdrop') {
+              commitScene({ ...scene, layers: [imgLayer, ...scene.layers] });
+              setSelectedLayerIndex(0);
+              showToast(`Backdrop added: ${asset.title}`);
+              return;
+            }
+            const nextLayers = [...scene.layers, imgLayer];
+            commitScene({ ...scene, layers: nextLayers });
+            setSelectedLayerIndex(nextLayers.length - 1);
+            showToast(`Overlay added: ${asset.title}`);
+          }}
           onToggleHidden={handleToggleHidden}
           onMoveLayer={handleMoveLayer}
           onDuplicateLayer={handleDuplicateLayer}

@@ -21,7 +21,19 @@ import {
 import { validateAndNormalizeScene } from '../engine/lint';
 import type { Layer, LintWarning, RustrenScene } from '../engine/types';
 
-export type LeftTab = 'layers' | 'json' | 'lint';
+export type LeftTab = 'layers' | 'assets' | 'json' | 'lint';
+
+export interface CatalogAsset {
+  id: string;
+  kind: 'backdrop' | 'overlay' | 'matte';
+  title: string;
+  tags: string[];
+  thumb: string;
+  src: string;
+  blend: string;
+  tintable?: boolean;
+  track_matte?: string;
+}
 
 interface LeftSidebarProps {
   scene: RustrenScene;
@@ -30,6 +42,7 @@ interface LeftSidebarProps {
   selectedLayerIndex: number | null;
   onSelectLayer: (idx: number | null) => void;
   onAddLayer: (type: Layer['type']) => void;
+  onInsertCatalogAsset: (asset: CatalogAsset, fullUrl: string) => void;
   onToggleHidden: (idx: number) => void;
   onMoveLayer: (idx: number, dir: -1 | 1) => void;
   onDuplicateLayer: (idx: number) => void;
@@ -57,6 +70,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   selectedLayerIndex,
   onSelectLayer,
   onAddLayer,
+  onInsertCatalogAsset,
   onToggleHidden,
   onMoveLayer,
   onDuplicateLayer,
@@ -67,6 +81,22 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
 }) => {
   const [jsonDraft, setJsonDraft] = useState(() => JSON.stringify(scene, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [catalogItems, setCatalogItems] = useState<CatalogAsset[]>([]);
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'backdrop' | 'overlay' | 'matte'>('all');
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+
+  const catalogBase = `${import.meta.env.BASE_URL}assets/catalog/`;
+
+  useEffect(() => {
+    if (activeTab !== 'assets' || catalogLoaded) return;
+    fetch(`${catalogBase}catalog.json`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) setCatalogItems(data as CatalogAsset[]);
+        setCatalogLoaded(true);
+      })
+      .catch(() => setCatalogLoaded(true));
+  }, [activeTab, catalogLoaded, catalogBase]);
 
   useEffect(() => {
     setJsonDraft(JSON.stringify(scene, null, 2));
@@ -114,6 +144,21 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
             {scene.layers.length}
           </span>
+        </button>
+
+        <button
+          role="tab"
+          type="button"
+          aria-selected={activeTab === 'assets'}
+          onClick={() => onTabChange('assets')}
+          className={`flex-1 flex items-center justify-center gap-1 py-1 text-xs font-medium rounded transition-colors ${
+            activeTab === 'assets'
+              ? 'bg-[#252633] text-white'
+              : 'text-[#8B8B96] hover:text-[#D4D4D8]'
+          }`}
+        >
+          <ImageIcon className="w-3.5 h-3.5" />
+          <span>Assets</span>
         </button>
 
         <button
@@ -336,6 +381,69 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                   </div>
                 );
               })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 1B: ASSETS CATALOG */}
+      {activeTab === 'assets' && (
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="p-2 border-b border-[#252630] bg-[#14151C] flex items-center gap-1">
+            {(['all', 'backdrop', 'overlay', 'matte'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setCatalogFilter(k)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium capitalize transition-colors ${
+                  catalogFilter === k
+                    ? 'bg-[#F97316] text-[#09090D]'
+                    : 'bg-[#1B1C25] text-[#A1A1AA] hover:text-white'
+                }`}
+              >
+                {k === 'all' ? 'All' : `${k}s`}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+            <div className="grid grid-cols-2 gap-2">
+              {catalogItems
+                .filter((it) => catalogFilter === 'all' || it.kind === catalogFilter)
+                .map((it) => {
+                  const thumbUrl = `${catalogBase}${it.thumb}`;
+                  const fullUrl = new URL(`${catalogBase}${it.src}`, window.location.origin).href;
+                  return (
+                    <button
+                      key={it.id}
+                      type="button"
+                      onClick={() => onInsertCatalogAsset(it, fullUrl)}
+                      title={
+                        it.kind === 'matte'
+                          ? 'Apply as Luma Track Matte to selected layer (or insert)'
+                          : `Insert ${it.title} (${it.blend})`
+                      }
+                      className="group text-left rounded border border-[#252632] bg-[#161720] hover:border-[#F97316] overflow-hidden transition-colors"
+                    >
+                      <div className="aspect-video bg-black overflow-hidden relative">
+                        <img
+                          src={thumbUrl}
+                          alt={it.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <span className="absolute top-1 right-1 px-1 py-0.5 rounded bg-black/75 font-mono text-[9px] text-[#FDBA74] uppercase">
+                          {it.kind === 'matte' ? 'luma' : it.blend !== 'normal' ? it.blend : 'bg'}
+                        </span>
+                      </div>
+                      <div className="px-1.5 py-1 text-[10px] font-medium text-[#E4E4E7] truncate">
+                        {it.title}
+                      </div>
+                    </button>
+                  );
+                })}
+            </div>
+            {catalogLoaded && catalogItems.length === 0 && (
+              <div className="text-center text-xs text-[#71717A] py-8">No catalog assets found.</div>
             )}
           </div>
         </div>

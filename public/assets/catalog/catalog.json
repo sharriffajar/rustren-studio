@@ -1,0 +1,258 @@
+[
+  {
+    "id": "bg-dark-glass",
+    "kind": "backdrop",
+    "title": "Dark Glass Monoliths",
+    "tags": [
+      "dark",
+      "3d",
+      "glass"
+    ],
+    "thumb": "thumbs/bg-dark-glass.jpg",
+    "src": "media/bg-dark-glass.jpg",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "bg-clay-stage",
+    "kind": "backdrop",
+    "title": "3D Clay Cyclorama",
+    "tags": [
+      "neutral",
+      "3d",
+      "tintable"
+    ],
+    "thumb": "thumbs/bg-clay-stage.jpg",
+    "src": "media/bg-clay-stage.jpg",
+    "blend": "normal",
+    "tintable": true
+  },
+  {
+    "id": "bg-brushed-metal",
+    "kind": "backdrop",
+    "title": "Brushed Titanium",
+    "tags": [
+      "dark",
+      "metal",
+      "texture"
+    ],
+    "thumb": "thumbs/bg-brushed-metal.jpg",
+    "src": "media/bg-brushed-metal.jpg",
+    "blend": "normal",
+    "tintable": true
+  },
+  {
+    "id": "bg-liquid-chrome",
+    "kind": "backdrop",
+    "title": "Liquid Chrome Waves",
+    "tags": [
+      "3d",
+      "chrome",
+      "abstract"
+    ],
+    "thumb": "thumbs/bg-liquid-chrome.jpg",
+    "src": "media/bg-liquid-chrome.jpg",
+    "blend": "normal",
+    "tintable": true
+  },
+  {
+    "id": "bg-editorial-paper",
+    "kind": "backdrop",
+    "title": "Editorial Paper",
+    "tags": [
+      "light",
+      "paper",
+      "minimal"
+    ],
+    "thumb": "thumbs/bg-editorial-paper.jpg",
+    "src": "media/bg-editorial-paper.jpg",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "bg-frosted-prism",
+    "kind": "backdrop",
+    "title": "Frosted Prism Light",
+    "tags": [
+      "glass",
+      "light",
+      "abstract"
+    ],
+    "thumb": "thumbs/bg-frosted-prism.jpg",
+    "src": "media/bg-frosted-prism.jpg",
+    "blend": "normal",
+    "tintable": true
+  },
+  {
+    "id": "bg-obsidian-waves",
+    "kind": "backdrop",
+    "title": "Obsidian Sculptural",
+    "tags": [
+      "dark",
+      "3d",
+      "minimal"
+    ],
+    "thumb": "thumbs/bg-obsidian-waves.jpg",
+    "src": "media/bg-obsidian-waves.jpg",
+    "blend": "normal",
+    "tintable": true
+  },
+  {
+    "id": "bg-concrete-light",
+    "kind": "backdrop",
+    "title": "Brutalist Concrete",
+    "tags": [
+      "architecture",
+      "neutral",
+      "texture"
+    ],
+    "thumb": "thumbs/bg-concrete-light.jpg",
+    "src": "media/bg-concrete-light.jpg",
+    "blend": "normal",
+    "tintable": true
+  },
+  {
+    "id": "ov-anamorphic-flare",
+    "kind": "overlay",
+    "title": "Anamorphic Lens Flare",
+    "tags": [
+      "flare",
+      "optical",
+      "screen"
+    ],
+    "thumb": "thumbs/ov-anamorphic-flare.jpg",
+    "src": "media/ov-anamorphic-flare.jpg",
+    "blend": "screen",
+    "tintable": true
+  },
+  {
+    "id": "ov-bokeh-soft",
+    "kind": "overlay",
+    "title": "Soft Optical Bokeh",
+    "tags": [
+      "bokeh",
+      "light",
+      "screen"
+    ],
+    "thumb": "thumbs/ov-bokeh-soft.jpg",
+    "src": "media/ov-bokeh-soft.jpg",
+    "blend": "screen",
+    "tintable": true
+  },
+  {
+    "id": "ov-dust-scratches",
+    "kind": "overlay",
+    "title": "Analog Film Dust",
+    "tags": [
+      "vintage",
+      "dust",
+      "screen"
+    ],
+    "thumb": "thumbs/ov-dust-scratches.jpg",
+    "src": "media/ov-dust-scratches.jpg",
+    "blend": "screen",
+    "tintable": true
+  },
+  {
+    "id": "ov-film-grain",
+    "kind": "overlay",
+    "title": "35mm Cinema Grain",
+    "tags": [
+      "grain",
+      "film",
+      "overlay"
+    ],
+    "thumb": "thumbs/ov-film-grain.jpg",
+    "src": "media/ov-film-grain.jpg",
+    "blend": "overlay",
+    "tintable": false
+  },
+  {
+    "id": "ov-crt-scanlines",
+    "kind": "overlay",
+    "title": "CRT Scanlines",
+    "tags": [
+      "crt",
+      "retro",
+      "overlay"
+    ],
+    "thumb": "thumbs/ov-crt-scanlines.jpg",
+    "src": "media/ov-crt-scanlines.jpg",
+    "blend": "overlay",
+    "tintable": false
+  },
+  {
+    "id": "ov-vignette-soft",
+    "kind": "overlay",
+    "title": "Cinematic Vignette",
+    "tags": [
+      "vignette",
+      "cinema",
+      "multiply"
+    ],
+    "thumb": "thumbs/ov-vignette-soft.jpg",
+    "src": "media/ov-vignette-soft.jpg",
+    "blend": "multiply",
+    "tintable": false
+  },
+  {
+    "id": "mt-ink-bleed",
+    "kind": "matte",
+    "title": "Ink Bleed Mask",
+    "tags": [
+      "ink",
+      "organic",
+      "matte"
+    ],
+    "thumb": "thumbs/mt-ink-bleed.jpg",
+    "src": "media/mt-ink-bleed.jpg",
+    "blend": "normal",
+    "tintable": false,
+    "track_matte": "luma"
+  },
+  {
+    "id": "mt-brush-sweep",
+    "kind": "matte",
+    "title": "Dry Brush Sweep",
+    "tags": [
+      "brush",
+      "editorial",
+      "matte"
+    ],
+    "thumb": "thumbs/mt-brush-sweep.jpg",
+    "src": "media/mt-brush-sweep.jpg",
+    "blend": "normal",
+    "tintable": false,
+    "track_matte": "luma"
+  },
+  {
+    "id": "mt-smoke-reveal",
+    "kind": "matte",
+    "title": "Smoke Cloud Mask",
+    "tags": [
+      "smoke",
+      "soft",
+      "matte"
+    ],
+    "thumb": "thumbs/mt-smoke-reveal.jpg",
+    "src": "media/mt-smoke-reveal.jpg",
+    "blend": "normal",
+    "tintable": false,
+    "track_matte": "luma"
+  },
+  {
+    "id": "mt-geometric-split",
+    "kind": "matte",
+    "title": "Diagonal Split Mask",
+    "tags": [
+      "geometric",
+      "clean",
+      "matte"
+    ],
+    "thumb": "thumbs/mt-geometric-split.jpg",
+    "src": "media/mt-geometric-split.jpg",
+    "blend": "normal",
+    "tintable": false,
+    "track_matte": "luma"
+  }
+]
