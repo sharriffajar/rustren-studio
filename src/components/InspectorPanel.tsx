@@ -303,7 +303,26 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <label className="block text-[10px] text-[#8B8B96] mb-1">Anchor</label>
             <select
               value={layer.anchor || 'top_left'}
-              onChange={(e) => update({ anchor: e.target.value as Anchor })}
+              onChange={(e) => {
+                const nextAnchor = e.target.value as Anchor;
+                const oldAnchor = layer.anchor || 'top_left';
+                const anchorFrac = (a: Anchor): [number, number] => {
+                  const fx = a.includes('right') ? 1 : a.includes('center') && !a.endsWith('left') ? 0.5 : 0;
+                  const fy = a.startsWith('bottom') ? 1 : a.startsWith('center') ? 0.5 : 0;
+                  return [fx, fy];
+                };
+                if ('x' in layer && 'y' in layer && 'width' in layer && 'height' in layer && typeof layer.width === 'number' && typeof layer.height === 'number') {
+                  const [ox, oy] = anchorFrac(oldAnchor);
+                  const [nx, ny] = anchorFrac(nextAnchor);
+                  update({
+                    anchor: nextAnchor,
+                    x: Math.round((layer.x ?? 0) + (nx - ox) * layer.width),
+                    y: Math.round((layer.y ?? 0) + (ny - oy) * layer.height),
+                  } as Partial<Layer>);
+                } else {
+                  update({ anchor: nextAnchor });
+                }
+              }}
               className="w-full bg-[#171820] border border-[#2C2D39] rounded px-2 py-1 text-xs text-[#E4E4E7] focus:outline-none focus:border-[#F97316]"
             >
               {ANCHORS.map((a) => (
