@@ -36,10 +36,10 @@ For NEW scenes or MAJOR layout redesigns (e.g., converting 16:9 to 9:16), return
 }
 
 Supported Rustren v1.1 (v0.5.1) layer types & fields:
-Common BaseLayer fields on all layers: id?, name?, anchor?, pivot_x? (0..1, default 0.5), pivot_y? (0..1, default 0.5), opacity?, scale?, scale_x?, scale_y?, rotation?, skew_x?, skew_y?, blur?, blend_mode? ("normal"|"multiply"|"screen"|"overlay"|"darken"|"lighten"|"color_dodge"|"color_burn"|"hard_light"|"soft_light"|"difference"|"exclusion"), shadow?, echo?: { count?, step_sec?, decay? }, wave_warp?: { amplitude?, frequency?, speed?, phase?, axis?: "x"|"y"|"stretch_x"|"stretch_y" }, track_matte?: "alpha"|"alpha_inverted"|"luma"|"luma_inverted", matte_layer?: "<layer_id>", start_sec?, end_sec?, animations?
+Common BaseLayer fields on all layers: id?, name?, anchor?, pivot_x? (0..1, default 0.5), pivot_y? (0..1, default 0.5), opacity?, scale?, scale_x?, scale_y?, rotation?, skew_x?, skew_y?, blur?, blend_mode? ("normal"|"multiply"|"screen"|"overlay"|"darken"|"lighten"|"color_dodge"|"color_burn"|"hard_light"|"soft_light"|"difference"|"exclusion"), shadow?, echo?: { count?, step_sec?, decay? }, wave_warp?: { amplitude?, wavelength?, speed?, phase?, axis?: "x"|"y"|"stretch_x"|"stretch_y" }, track_matte?: "alpha"|"alpha_inverted"|"luma"|"luma_inverted", matte_layer?: { type: "rect"|"circle"|"text", ... }, start_sec?, end_sec?, animations?
 1. "rect": { type: "rect", name, x, y, width, height, radius?, color, gradient?, border_color?, border_width?, ... }
 2. "circle": { type: "circle", name, cx, cy, r, color, border_color?, border_width?, ... }
-3. "text": { type: "text", name, x, y, content?, dynamic?, font_size, font_weight?: "thin"|"light"|"normal"|"medium"|"semibold"|"bold"|"extrabold"|"black"|100..900, font_family?, text_align?: "left"|"center"|"right", color, max_width?, line_height?, text_animator?: { unit?: "char"|"word", start_sec?, stagger_secs?, duration_secs?, x_offset?, y_offset?, opacity_from?, scale_from?, easing? }, ... }
+3. "text": { type: "text", name, x, y, content?, dynamic?, font_size, font_weight?: "thin"|"light"|"normal"|"medium"|"semibold"|"bold"|"extrabold"|"black"|100..900, font_family?, text_align?: "left"|"center"|"right", color, max_width?, line_height?, text_animator?: { mode?: "char"|"word", start_sec?, stagger_secs?, duration_secs?, x_offset?, y_offset?, opacity_from?, scale_from?, easing? }, ... }
    - dynamic modes:
      - { mode: "typewriter", text: "...", start_sec: 0.2, end_sec: 1.2, cursor: "_" }
      - { mode: "counter", from: 0, to: 100, decimals?: 1, prefix?: "", suffix?: "%", start_sec: 0.5, end_sec: 2.0, easing?: "ease_out_expo" }
@@ -47,7 +47,7 @@ Common BaseLayer fields on all layers: id?, name?, anchor?, pivot_x? (0..1, defa
 4. "waveform": { type: "waveform", name, x, y, width, height, bars?, bar_gap?, color, speed?, seed?, ... }
 5. "particles": { type: "particles", name, x, y, width, height, count?, seed?, speed?, gravity?, spread?, angle?, size?, shape?: "circle"|"rect"|"confetti", colors?: string[], ... }
 6. "svg": { type: "svg", name, x, y, width, height, src: "<svg ...>...</svg>", ... }
-7. "container": { type: "container", name, x, y, width, height, color?, radius?, clip?, clip_feather?, cascade_opacity?, layout?: { direction?: "row"|"column", gap?, padding? }, children: [...], ... }
+7. "container": { type: "container", name, x, y, width, height, background?, radius?, clip?, clip_feather?, cascade_opacity?, layout?: { direction?: "row"|"column", gap?, padding? }, children: [...], ... }
 
 Animations array item format:
 { "property": "x"|"y"|"width"|"height"|"opacity"|"scale"|"scale_x"|"scale_y"|"rotation"|"skew_x"|"r"|"radius"|"color"|"border_color", "from"?: <num|hex>, "to"?: <num|hex>, "expr"?: "<math expr with t>", "start_sec"?: <num>, "end_sec"?: <num>, "easing"?: "linear"|"ease_in"|"ease_out"|"ease_in_out"|"ease_out_expo"|"ease_out_back"|"ease_out_bounce"|"spring", "repeat"?: number|"infinite", "yoyo"?: boolean }
@@ -230,7 +230,7 @@ export async function runAiDirectorCommand(params: {
 
   if (provider === 'gemini_byok') {
     const cleanModel = (model || 'gemini-2.5-flash').replace(/^models\//, '');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cleanModel)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cleanModel)}:generateContent`;
     // Gemini takes every modality in `contents[0].parts`: text first, then one
     // `inline_data` block per reference image.
     const parts: Array<Record<string, unknown>> = [{ text: userContent }];
@@ -239,18 +239,23 @@ export async function runAiDirectorCommand(params: {
     }
     const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey.trim(),
+      },
+      signal: AbortSignal.timeout(90_000),
       body: JSON.stringify({
         system_instruction: { parts: [{ text: RUSTREN_AI_SYSTEM_PROMPT }] },
         contents: [{ role: 'user', parts }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
       }),
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       throw new Error(data?.error?.message || `Gemini API error (${resp.status})`);
     }
-    rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const respParts = (data?.candidates?.[0]?.content?.parts ?? []) as Array<{ text?: string; thought?: boolean }>;
+    rawText = respParts.filter((p) => !p.thought && typeof p.text === 'string').map((p) => p.text).join('') || '';
   } else if (provider === 'anthropic') {
     // Anthropic needs an explicit typed block per image with base64 source.
     const content: Array<Record<string, unknown>> = [{ type: 'text', text: userContent }];
@@ -293,12 +298,14 @@ export async function runAiDirectorCommand(params: {
     if (apiKey.trim()) {
       headers['Authorization'] = `Bearer ${apiKey.trim()}`;
     }
-    // OpenAI / OpenRouter / custom OpenAI-compatible servers take a `content`
-    // array mixing text and `image_url` blocks with a data URL.
-    const content: Array<Record<string, unknown>> = [{ type: 'text', text: userContent }];
-    for (const ref of references) {
-      content.push({ type: 'image_url', image_url: { url: ref.dataUrl } });
-    }
+    // Use plain string content when no images are attached (better compat with text-only models)
+    const content: string | Array<Record<string, unknown>> =
+      references.length === 0
+        ? userContent
+        : [
+            { type: 'text', text: userContent },
+            ...references.map((ref) => ({ type: 'image_url', image_url: { url: ref.dataUrl } })),
+          ];
     const baseBody: Record<string, unknown> = {
       model: model || 'gpt-4o-mini',
       temperature: 0.2,
@@ -311,6 +318,7 @@ export async function runAiDirectorCommand(params: {
     let resp = await fetch(endpoint, {
       method: 'POST',
       headers,
+      signal: AbortSignal.timeout(90_000),
       body: JSON.stringify(
         useJsonFormat ? { ...baseBody, response_format: { type: 'json_object' } } : baseBody
       ),
@@ -357,8 +365,11 @@ export async function testAiConnection(params: {
 
     if (provider === 'gemini_byok') {
       const m = model || 'gemini-2.5-flash';
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}?key=${encodeURIComponent(apiKey.trim())}`;
-      const resp = await fetch(url);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}`;
+      const resp = await fetch(url, {
+        headers: { 'x-goog-api-key': apiKey.trim() },
+        signal: AbortSignal.timeout(15_000),
+      });
       const latencyMs = Math.round(performance.now() - t0);
       if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));

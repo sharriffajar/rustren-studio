@@ -105,6 +105,8 @@ export type WaveWarpAxis = 'x' | 'y' | 'stretch_x' | 'stretch_y';
 
 export interface WaveWarpSpec {
   amplitude?: number;
+  wavelength?: number;
+  /** @deprecated legacy alias; use wavelength */
   frequency?: number;
   speed?: number;
   phase?: number;
@@ -118,6 +120,8 @@ export interface EchoSpec {
 }
 
 export interface TextAnimatorSpec {
+  mode?: 'char' | 'word';
+  /** @deprecated legacy alias; use mode */
   unit?: 'char' | 'word';
   start_sec?: number;
   stagger_secs?: number;
@@ -271,7 +275,7 @@ export interface BaseLayer {
   echo?: EchoSpec;
   wave_warp?: WaveWarpSpec;
   track_matte?: TrackMatteMode;
-  matte_layer?: string;
+  matte_layer?: Layer | string;
   hidden?: boolean;
   animations?: Animation[];
 }
@@ -392,6 +396,8 @@ export interface ContainerLayer extends BaseLayer {
   y?: number;
   width?: number;
   height?: number;
+  background?: HexColor;
+  /** @deprecated legacy alias; use background */
   color?: HexColor;
   gradient?: LinearGradient;
   radius?: number;

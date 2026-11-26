@@ -15,7 +15,7 @@ import {
   exportWebmLocally,
 } from './engine/exporter';
 import { compileRustrenHtml } from './engine/htmlCompiler';
-import { autoFixScene, lintScene } from './engine/lint';
+import { autoFixScene, lintScene, validateAndNormalizeScene } from './engine/lint';
 import { SCENE_PRESETS } from './engine/presets';
 import { renderRustrenFrame } from './engine/renderer';
 import type {
@@ -42,11 +42,12 @@ function loadAutosavedProject(): {
     const raw = localStorage.getItem(STORAGE_AUTOSAVE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed?.scene?.canvas && Array.isArray(parsed?.scene?.layers)) {
+    const normalized = validateAndNormalizeScene(parsed?.scene);
+    if (normalized) {
       return {
         projectName: typeof parsed.projectName === 'string' ? parsed.projectName : SCENE_PRESETS[0].name,
         activePresetId: typeof parsed.activePresetId === 'string' ? parsed.activePresetId : 'custom',
-        scene: parsed.scene,
+        scene: normalized,
         frameNotes: Array.isArray(parsed.frameNotes) ? parsed.frameNotes : [],
       };
     }

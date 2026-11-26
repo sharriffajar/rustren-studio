@@ -247,7 +247,7 @@ export function renderRustrenFrame(
   for (const l of layers) {
     if (l.id) layerById.set(l.id, l);
     if (l.name && !layerById.has(l.name)) layerById.set(l.name, l);
-    if (l.track_matte && l.matte_layer) matteIds.add(l.matte_layer);
+    if (l.track_matte && typeof l.matte_layer === 'string') matteIds.add(l.matte_layer);
   }
 
   layers.forEach((layer, idx) => {
@@ -343,7 +343,9 @@ function applyWaveWarpToCanvas(
   const h = srcCanvas.height;
   const amp = warp.amplitude ?? 12;
   if (Math.abs(amp) < 0.01 || w === 0 || h === 0) return srcCanvas;
-  const freq = warp.frequency ?? 0.04;
+  const freq = warp.wavelength
+    ? (2 * Math.PI) / Math.max(1, warp.wavelength)
+    : (warp.frequency ?? 0.04);
   const speed = warp.speed ?? 4;
   const phase = (warp.phase ?? 0) + timeSec * speed;
   const axis = warp.axis ?? 'x';
@@ -360,48 +362,59 @@ function applyWaveWarpToCanvas(
   const s = srcData.data;
   const d = dstData.data;
 
-  if (axis === 'x' || axis === 'stretch_x') {
+  if (axis === 'x') {
     const lut = new Int32Array(h);
-    for (let y = 0; y < h; y++) {
-      lut[y] = Math.round(Math.sin(y * freq + phase) * amp);
-    }
-    const stretch = axis === 'stretch_x';
+    for (let y = 0; y < h; y++) lut[y] = Math.round(Math.sin(y * freq + phase) * amp);
     for (let y = 0; y < h; y++) {
       const shift = lut[y];
       const rowOff = y * w;
       for (let x = 0; x < w; x++) {
-        let sx = stretch
-          ? Math.round(w * 0.5 + (x - w * 0.5) / Math.max(0.2, 1 + (shift / Math.max(1, w)) * 2))
-          : x - shift;
+        const sx = x - shift;
         if (sx < 0 || sx >= w) continue;
         const si = (rowOff + sx) * 4;
         const di = (rowOff + x) * 4;
-        d[di] = s[si];
-        d[di + 1] = s[si + 1];
-        d[di + 2] = s[si + 2];
-        d[di + 3] = s[si + 3];
+        d[di] = s[si]; d[di + 1] = s[si + 1]; d[di + 2] = s[si + 2]; d[di + 3] = s[si + 3];
       }
     }
-  } else {
+  } else if (axis === 'stretch_x') {
     const lut = new Int32Array(w);
-    for (let x = 0; x < w; x++) {
-      lut[x] = Math.round(Math.sin(x * freq + phase) * amp);
-    }
-    const stretch = axis === 'stretch_y';
+    for (let x = 0; x < w; x++) lut[x] = Math.round(x - Math.sin(x * freq + phase) * amp);
     for (let y = 0; y < h; y++) {
       const rowOff = y * w;
       for (let x = 0; x < w; x++) {
-        const shift = lut[x];
-        let sy = stretch
-          ? Math.round(h * 0.5 + (y - h * 0.5) / Math.max(0.2, 1 + (shift / Math.max(1, h)) * 2))
-          : y - shift;
+        const sx = lut[x];
+        if (sx < 0 || sx >= w) continue;
+        const si = (rowOff + sx) * 4;
+        const di = (rowOff + x) * 4;
+        d[di] = s[si]; d[di + 1] = s[si + 1]; d[di + 2] = s[si + 2]; d[di + 3] = s[si + 3];
+      }
+    }
+  } else if (axis === 'y') {
+    const lut = new Int32Array(w);
+    for (let x = 0; x < w; x++) lut[x] = Math.round(Math.sin(x * freq + phase) * amp);
+    for (let y = 0; y < h; y++) {
+      const rowOff = y * w;
+      for (let x = 0; x < w; x++) {
+        const sy = y - lut[x];
         if (sy < 0 || sy >= h) continue;
         const si = (sy * w + x) * 4;
         const di = (rowOff + x) * 4;
-        d[di] = s[si];
-        d[di + 1] = s[si + 1];
-        d[di + 2] = s[si + 2];
-        d[di + 3] = s[si + 3];
+        d[di] = s[si]; d[di + 1] = s[si + 1]; d[di + 2] = s[si + 2]; d[di + 3] = s[si + 3];
+      }
+    }
+  } else {
+    // stretch_y
+    const lut = new Int32Array(h);
+    for (let y = 0; y < h; y++) lut[y] = Math.round(y - Math.sin(y * freq + phase) * amp);
+    for (let y = 0; y < h; y++) {
+      const sy = lut[y];
+      if (sy < 0 || sy >= h) continue;
+      const srcRow = sy * w;
+      const dstRow = y * w;
+      for (let x = 0; x < w; x++) {
+        const si = (srcRow + x) * 4;
+        const di = (dstRow + x) * 4;
+        d[di] = s[si]; d[di + 1] = s[si + 1]; d[di + 2] = s[si + 2]; d[di + 3] = s[si + 3];
       }
     }
   }
@@ -484,9 +497,15 @@ function renderLayer(
   }
 
   // Offscreen post-processing for wave_warp / track_matte (v0.5.1)
+  const resolvedMatteLayer =
+    layer.track_matte && layer.matte_layer
+      ? typeof layer.matte_layer === 'string'
+        ? layerById?.get(layer.matte_layer)
+        : layer.matte_layer
+      : undefined;
   const needsOffscreen =
     typeof document !== 'undefined' &&
-    Boolean(layer.wave_warp || (layer.track_matte && layer.matte_layer && layerById?.has(layer.matte_layer)));
+    Boolean(layer.wave_warp || resolvedMatteLayer);
 
   if (needsOffscreen) {
     const cw = canvasW || ctx.canvas.width || 1920;
@@ -509,17 +528,14 @@ function renderLayer(
         off = applyWaveWarpToCanvas(off, layer.wave_warp, timeSec);
       }
 
-      if (layer.track_matte && layer.matte_layer && layerById) {
-        const matteLayer = layerById.get(layer.matte_layer);
-        if (matteLayer) {
-          const matteCanvas = document.createElement('canvas');
-          matteCanvas.width = cw;
-          matteCanvas.height = ch;
-          const mctx = matteCanvas.getContext('2d');
-          if (mctx) {
-            renderLayerCore(mctx, matteLayer, null, timeSec, durationSecs, 1, 0, 0, {}, layerById, cw, ch);
-            applyTrackMatteToCanvas(off, matteCanvas, layer.track_matte);
-          }
+      if (layer.track_matte && resolvedMatteLayer) {
+        const matteCanvas = document.createElement('canvas');
+        matteCanvas.width = cw;
+        matteCanvas.height = ch;
+        const mctx = matteCanvas.getContext('2d');
+        if (mctx) {
+          renderLayerCore(mctx, resolvedMatteLayer, null, timeSec, durationSecs, 1, 0, 0, {}, layerById, cw, ch);
+          applyTrackMatteToCanvas(off, matteCanvas, layer.track_matte);
         }
       }
 
@@ -683,15 +699,15 @@ function renderLayerCore(
 
     if (layer.text_animator) {
       const ta = layer.text_animator;
-      const unit = ta.unit ?? 'char';
+      const unit = ta.mode ?? ta.unit ?? 'char';
       const taStart = ta.start_sec ?? layer.start_sec ?? 0;
       const stagger = ta.stagger_secs ?? 0.04;
       const dur = Math.max(0.01, ta.duration_secs ?? 0.35);
       const xOff = ta.x_offset ?? 0;
       const yOff = ta.y_offset ?? 24;
-      const opFrom = ta.opacity_from ?? 0;
+      const opFrom = ta.opacity_from ?? 1;
       const scFrom = ta.scale_from ?? 1;
-      const easing = ta.easing ?? 'ease_out_expo';
+      const easing = ta.easing ?? 'linear';
 
       let itemIdx = 0;
       lines.forEach((line, lineIdx) => {
@@ -922,9 +938,10 @@ function renderContainer(
     ctx.translate(-w / 2, -h / 2);
   }
 
-  if (layer.color || layer.gradient) {
+  const containerBg = layer.background || layer.color;
+  if (containerBg || layer.gradient) {
     drawRoundedRectPath(ctx, 0, 0, w, h, props.radius);
-    ctx.fillStyle = buildFillStyle(ctx, layer.color || '#18181D', layer.gradient, w, h);
+    ctx.fillStyle = buildFillStyle(ctx, containerBg || '#18181D', layer.gradient, w, h);
     ctx.fill();
   }
   if (layer.border_width && layer.border_width > 0) {

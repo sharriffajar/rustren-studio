@@ -147,7 +147,7 @@ export function lintScene(scene: RustrenScene): LintWarning[] {
       }
 
       if (layer.type === 'container' && Array.isArray(layer.children)) {
-        const nextBg = layer.color || parentBg;
+        const nextBg = layer.background || layer.color || parentBg;
         walk(layer.children, true, `${path}.children`, nextBg);
       }
     });
@@ -191,4 +191,43 @@ export function autoFixScene(scene: RustrenScene): RustrenScene {
 
   fixList(cloned.layers);
   return cloned;
+}
+
+/**
+ * Validates and normalizes untrusted scene JSON (from localStorage, file import, or JSON editor)
+ * so corrupt payloads can never trigger a React render crash-loop.
+ */
+export function validateAndNormalizeScene(raw: unknown): RustrenScene | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+  if (!obj.canvas || typeof obj.canvas !== 'object' || !Array.isArray(obj.layers)) {
+    return null;
+  }
+  const c = obj.canvas as Record<string, unknown>;
+  const width = typeof c.width === 'number' && Number.isFinite(c.width) && c.width > 0 ? Math.round(c.width) : 1280;
+  const height = typeof c.height === 'number' && Number.isFinite(c.height) && c.height > 0 ? Math.round(c.height) : 720;
+  const fps = typeof c.fps === 'number' && Number.isFinite(c.fps) && c.fps > 0 ? Math.min(120, Math.round(c.fps)) : 30;
+  const duration_secs =
+    typeof c.duration_secs === 'number' && Number.isFinite(c.duration_secs) && c.duration_secs >= 0
+      ? c.duration_secs
+      : 5;
+  const background = typeof c.background === 'string' ? c.background : '#09090D';
+
+  const sanitizeLayers = (arr: unknown[]): Layer[] =>
+    arr
+      .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object' && typeof (item as Record<string, unknown>).type === 'string'))
+      .map((item) => {
+        const copy = { ...item };
+        if (copy.type === 'container' && Array.isArray(copy.children)) {
+          copy.children = sanitizeLayers(copy.children);
+        }
+        return copy as unknown as Layer;
+      });
+
+  return {
+    ...(obj as unknown as RustrenScene),
+    schema_version: typeof obj.schema_version === 'string' ? obj.schema_version : '1.1',
+    canvas: { width, height, fps, duration_secs, background },
+    layers: sanitizeLayers(obj.layers),
+  };
 }

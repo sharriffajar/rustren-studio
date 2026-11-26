@@ -133,16 +133,15 @@ export async function exportMp4ViaRustrenApi(
 ): Promise<{ filename: string; sizeBytes: number; method: 'picker' | 'download'; renderSecs?: number }> {
   const baseUrl = (options.apiUrl || 'https://nvm.web.id/rustren/api').trim().replace(/\/+$/, '');
   const apiKey = options.apiKey.trim();
-  if (!apiKey) {
-    throw new Error('Enter your Rustren API Key first to render MP4 via API.');
-  }
 
   const scale = options.scale ?? 1;
+  const visibleLayers = (scene.layers || []).filter((l) => !l.hidden);
   const payloadScene: RustrenScene =
     scale === 1
-      ? scene
+      ? { ...scene, layers: visibleLayers }
       : {
           ...scene,
+          layers: visibleLayers,
           canvas: {
             ...scene.canvas,
             width: Math.max(64, Math.round((scene.canvas.width * scale) / 2) * 2),

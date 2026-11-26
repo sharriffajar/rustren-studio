@@ -18,6 +18,7 @@ import {
   Type,
   Wrench,
 } from 'lucide-react';
+import { validateAndNormalizeScene } from '../engine/lint';
 import type { Layer, LintWarning, RustrenScene } from '../engine/types';
 
 export type LeftTab = 'layers' | 'json' | 'lint';
@@ -74,8 +75,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
   const handleApplyJson = () => {
     try {
-      const parsed = JSON.parse(jsonDraft) as RustrenScene;
-      if (!parsed.canvas || !Array.isArray(parsed.layers)) {
+      const parsed = validateAndNormalizeScene(JSON.parse(jsonDraft));
+      if (!parsed) {
         setJsonError('JSON must contain a "canvas" object and a "layers" array.');
         return;
       }
