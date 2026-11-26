@@ -564,5 +564,173 @@
     "blend": "normal",
     "duration_sec": 15.02,
     "license": "CC0-1.0 (ANVEAI/motion-pack)"
+  },
+  {
+    "id": "prop-smartphone",
+    "kind": "prop",
+    "title": "3D Smartphone Mockup",
+    "tags": [
+      "device",
+      "phone",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-smartphone.png",
+    "src": "media/prop-smartphone.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-laptop",
+    "kind": "prop",
+    "title": "3D Laptop Mockup",
+    "tags": [
+      "device",
+      "laptop",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-laptop.png",
+    "src": "media/prop-laptop.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-glass-card",
+    "kind": "prop",
+    "title": "Frosted Glass Card",
+    "tags": [
+      "ui",
+      "glass",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-glass-card.png",
+    "src": "media/prop-glass-card.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-chrome-torus",
+    "kind": "prop",
+    "title": "Chrome 3D Torus",
+    "tags": [
+      "abstract",
+      "chrome",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-chrome-torus.png",
+    "src": "media/prop-chrome-torus.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-glass-prism",
+    "kind": "prop",
+    "title": "Crystal Glass Prism",
+    "tags": [
+      "abstract",
+      "glass",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-glass-prism.png",
+    "src": "media/prop-glass-prism.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-matte-sphere",
+    "kind": "prop",
+    "title": "Matte Clay Sphere",
+    "tags": [
+      "abstract",
+      "clay",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-matte-sphere.png",
+    "src": "media/prop-matte-sphere.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-gold-coin",
+    "kind": "prop",
+    "title": "3D Metallic Coin",
+    "tags": [
+      "finance",
+      "badge",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-gold-coin.png",
+    "src": "media/prop-gold-coin.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-headphones",
+    "kind": "prop",
+    "title": "3D Studio Headphones",
+    "tags": [
+      "audio",
+      "music",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-headphones.png",
+    "src": "media/prop-headphones.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-cube-glass",
+    "kind": "prop",
+    "title": "3D Glass Cube",
+    "tags": [
+      "abstract",
+      "glass",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-cube-glass.png",
+    "src": "media/prop-cube-glass.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-podium",
+    "kind": "prop",
+    "title": "3D Minimal Podium",
+    "tags": [
+      "stage",
+      "podium",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-podium.png",
+    "src": "media/prop-podium.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-play-button",
+    "kind": "prop",
+    "title": "3D Glass Play Icon",
+    "tags": [
+      "video",
+      "icon",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-play-button.png",
+    "src": "media/prop-play-button.png",
+    "blend": "normal",
+    "tintable": false
+  },
+  {
+    "id": "prop-spark-star",
+    "kind": "prop",
+    "title": "3D Chrome Star",
+    "tags": [
+      "ai",
+      "spark",
+      "3d"
+    ],
+    "thumb": "thumbs/prop-spark-star.png",
+    "src": "media/prop-spark-star.png",
+    "blend": "normal",
+    "tintable": false
   }
 ]

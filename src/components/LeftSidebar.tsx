@@ -26,7 +26,7 @@ export type LeftTab = 'layers' | 'assets' | 'json' | 'lint';
 
 export interface CatalogAsset {
   id: string;
-  kind: 'backdrop' | 'overlay' | 'matte' | 'audio';
+  kind: 'backdrop' | 'overlay' | 'matte' | 'prop' | 'audio';
   title: string;
   tags: string[];
   thumb: string;
@@ -86,7 +86,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   const [jsonDraft, setJsonDraft] = useState(() => JSON.stringify(scene, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [catalogItems, setCatalogItems] = useState<CatalogAsset[]>([]);
-  const [catalogFilter, setCatalogFilter] = useState<'all' | 'backdrop' | 'overlay' | 'matte' | 'audio'>('all');
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'backdrop' | 'overlay' | 'matte' | 'prop' | 'audio'>('all');
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const previewAudioRef = React.useRef<HTMLAudioElement | null>(null);
@@ -413,7 +413,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       {activeTab === 'assets' && (
         <div className="flex-1 flex flex-col min-h-0">
           <div className="p-2 border-b border-[#252630] bg-[#14151C] flex flex-wrap items-center gap-1">
-            {(['all', 'backdrop', 'overlay', 'matte', 'audio'] as const).map((k) => (
+            {(['all', 'backdrop', 'prop', 'overlay', 'matte', 'audio'] as const).map((k) => (
               <button
                 key={k}
                 type="button"
@@ -509,15 +509,15 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                           }
                           className="text-left w-full"
                         >
-                          <div className="aspect-video bg-black overflow-hidden relative">
+                          <div className={`aspect-video overflow-hidden relative ${it.kind === 'prop' ? 'stage-checkerboard' : 'bg-black'}`}>
                             <img
                               src={thumbUrl}
                               alt={it.title}
                               loading="lazy"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              className={`w-full h-full ${it.kind === 'prop' ? 'object-contain p-1' : 'object-cover'} group-hover:scale-105 transition-transform`}
                             />
                             <span className="absolute top-1 right-1 px-1 py-0.5 rounded bg-black/75 font-mono text-[9px] text-[#FDBA74] uppercase">
-                              {it.kind === 'matte' ? 'luma' : it.blend !== 'normal' ? it.blend : 'bg'}
+                              {it.kind === 'matte' ? 'luma' : it.kind === 'prop' ? '3d' : it.blend !== 'normal' ? it.blend : 'bg'}
                             </span>
                           </div>
                           <div className="px-1.5 py-1 text-[10px] font-medium text-[#E4E4E7] truncate">
