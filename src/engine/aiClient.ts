@@ -82,6 +82,7 @@ Authoring quality rules:
 - Always ensure high text contrast (>= 4.5:1) against background/cards.
 - Keep all coordinates inside canvas bounds.
 - For centered text, always set anchor: "center", text_align: "center", x: canvas.width / 2, and max_width (e.g., Math.round(canvas.width * 0.85)) so text stays optically centered.
+- Inside a "container", any child positioned with explicit x/y coordinates MUST include "position": "absolute" so Studio preview and Rustren Taffy layout match 100%.
 - Return ONLY raw valid JSON without markdown code fences.`;
 
 export interface ScenePatch {

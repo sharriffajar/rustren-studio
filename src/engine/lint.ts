@@ -63,6 +63,20 @@ export function lintScene(scene: RustrenScene): LintWarning[] {
         });
       }
 
+      if (inContainer && layer.position !== 'absolute') {
+        const hasExplicitXY =
+          ('x' in layer && typeof layer.x === 'number' && layer.x !== 0) ||
+          ('y' in layer && typeof layer.y === 'number' && layer.y !== 0);
+        if (hasExplicitXY) {
+          warnings.push({
+            code: 'schema',
+            path,
+            message: `Child "${layer.name || layer.type}" inside a container has explicit x/y without position: "absolute".`,
+            fix: 'Add "position": "absolute" so Taffy layout matches Studio preview',
+          });
+        }
+      }
+
       if (layer.type === 'text') {
         const fs = layer.font_size ?? 48;
         if (fs < minFontPx) {
@@ -173,6 +187,14 @@ export function autoFixScene(scene: RustrenScene): RustrenScene {
     for (const layer of layers) {
       if (layer.end_sec !== undefined && layer.end_sec > duration) {
         layer.end_sec = duration;
+      }
+      if (containerWidth && layer.position !== 'absolute') {
+        const hasExplicitXY =
+          ('x' in layer && typeof layer.x === 'number' && layer.x !== 0) ||
+          ('y' in layer && typeof layer.y === 'number' && layer.y !== 0);
+        if (hasExplicitXY) {
+          layer.position = 'absolute';
+        }
       }
       if (layer.type === 'text') {
         if ((layer.font_size ?? 48) < minFontPx) {
