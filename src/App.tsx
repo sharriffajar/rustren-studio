@@ -805,27 +805,6 @@ export default function App() {
               return;
             }
             const dur = scene.canvas.duration_secs || 5;
-            if (asset.kind === 'prop') {
-              const propSize = Math.round(Math.min(scene.canvas.width, scene.canvas.height) * 0.48);
-              const propLayer: Layer = {
-                type: 'image',
-                name: asset.title,
-                src: fullUrl,
-                anchor: 'center',
-                x: Math.round(scene.canvas.width / 2),
-                y: Math.round(scene.canvas.height / 2),
-                width: propSize,
-                height: propSize,
-                fit: 'contain',
-                start_sec: 0,
-                end_sec: dur,
-              };
-              const nextLayers = [...scene.layers, propLayer];
-              commitScene({ ...scene, layers: nextLayers });
-              setSelectedLayerIndex(nextLayers.length - 1);
-              showToast(`3D Prop added: ${asset.title}`);
-              return;
-            }
             const mediaLayer: Layer = asset.is_video
               ? {
                   type: 'video',

@@ -188,7 +188,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <li><strong className="text-white">Ctrl+Z / Ctrl+Shift+Z</strong> — Undo / Redo</li>
               <li><strong className="text-white">Drag &amp; Drop</strong> — Open `.json` scene, `.html`, image, or Lottie `.json`</li>
               <li><strong className="text-white">Annotate</strong> — Click or drag on frame to pin review notes for AI Director</li>
-              <li><strong className="text-white">Assets Tab</strong> — 56 free Backdrops, 3D Props, Video Loops &amp; CC0 Audio</li>
+              <li><strong className="text-white">Assets Tab</strong> — 44 free Backdrops, Overlays, Video Loops &amp; CC0 Audio</li>
             </ul>
           </div>
         )}
