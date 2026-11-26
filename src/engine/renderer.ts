@@ -6,6 +6,7 @@ import {
   normalizeFontWeight,
   type ComputedLayerProps,
 } from './animation';
+import { getCachedLottie, renderLottieToCanvas } from './lottie';
 import type {
   Anchor,
   BlendMode,
@@ -970,6 +971,34 @@ function renderLayerCore(
         }
         ctx.drawImage(vid, -dw / 2, -dh / 2, dw, dh);
       }
+    }
+  } else if (layer.type === 'lottie') {
+    const w = Math.max(10, props.width || 240);
+    const h = Math.max(10, props.height || 240);
+    const [ox, oy] = getAnchorOffset(layer.anchor, w, h);
+    const px = originX + props.x;
+    const py = originY + props.y;
+
+    if (rootIndex !== null && options.collectBounds) {
+      options.collectBounds.push({ layerIndex: rootIndex, x: px + ox, y: py + oy, width: w, height: h });
+    }
+
+    const doc = getCachedLottie(layer.src, options.onAssetLoad);
+    applyTransform(ctx, px + ox + w / 2, py + oy + h / 2, props);
+    if (doc) {
+      ctx.save();
+      ctx.translate(-w / 2, -h / 2);
+      renderLottieToCanvas(
+        ctx,
+        doc,
+        timeSec - (layer.start_sec ?? 0),
+        layer.loop_animation ?? true,
+        layer.speed ?? 1,
+        w,
+        h,
+        1
+      );
+      ctx.restore();
     }
   } else if (layer.type === 'container') {
     renderContainer(ctx, layer, rootIndex, props, timeSec, durationSecs, finalOpacity, originX, originY, options, layerById, canvasW, canvasH);

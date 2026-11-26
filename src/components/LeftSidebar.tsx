@@ -64,6 +64,7 @@ const LAYER_BADGE: Record<Layer['type'], string> = {
   svg: 'SVG',
   image: 'IMG',
   video: 'VID',
+  lottie: 'LOT',
   waveform: 'WAVE',
   particles: 'PART',
   container: 'CONT',

@@ -20,6 +20,7 @@ const TRACK_COLORS: Record<Layer['type'], string> = {
   svg: 'bg-[#1D3B38] border-[#2DD4BF]/60 text-[#CCFBF1]',
   image: 'bg-[#4C1D2D] border-[#FB7185]/60 text-[#FFE4E6]',
   video: 'bg-[#4A1D4C] border-[#E879F9]/60 text-[#FAE8FF]',
+  lottie: 'bg-[#1D3B4C] border-[#38BDF8]/60 text-[#E0F2FE]',
   waveform: 'bg-[#163B29] border-[#34D399]/60 text-[#D1FAE5]',
   particles: 'bg-[#423310] border-[#FACC15]/60 text-[#FEF9C3]',
   container: 'bg-[#262938] border-[#94A3B8]/50 text-[#F1F5F9]',

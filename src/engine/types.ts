@@ -370,6 +370,19 @@ export interface VideoLayer extends BaseLayer {
   radius?: number;
 }
 
+export interface LottieLayer extends BaseLayer {
+  type: 'lottie';
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  src: string;
+  loop_animation?: boolean;
+  speed?: number;
+  rotation?: number;
+  scale?: number;
+}
+
 export interface WaveformLayer extends BaseLayer {
   type: 'waveform';
   x?: number;
@@ -436,6 +449,7 @@ export type Layer =
   | SvgLayer
   | ImageLayer
   | VideoLayer
+  | LottieLayer
   | WaveformLayer
   | ParticlesLayer
   | ContainerLayer;
