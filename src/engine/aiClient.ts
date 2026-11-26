@@ -47,8 +47,10 @@ Common BaseLayer fields on all layers: id?, name?, anchor?, pivot_x? (0..1, defa
 4. "waveform": { type: "waveform", name, x, y, width, height, bars?, bar_gap?, color, speed?, seed?, ... }
 5. "particles": { type: "particles", name, x, y, width, height, count?, seed?, speed?, gravity?, spread?, angle?, size?, shape?: "circle"|"rect"|"confetti", colors?: string[], ... }
 6. "svg": { type: "svg", name, x, y, width, height, src: "<svg ...>...</svg>", ... }
-7. "lottie": { type: "lottie", name, x, y, width, height, src: "<inline Bodymovin JSON string or https:// URL>", loop_animation?: true, speed?: 1.0, ... }
-8. "container": { type: "container", name, x, y, width, height, background?, radius?, clip?, clip_feather?, cascade_opacity?, layout?: { direction?: "row"|"column", gap?, padding? }, children: [...], ... }
+7. "image": { type: "image", name, x, y, width, height, src: "<https:// URL>", fit?: "cover"|"contain"|"fill", radius?, ... }
+8. "video": { type: "video", name, x, y, width, height, src: "<https:// MP4 URL>", fit?: "cover"|"contain"|"fill", loop?: true, playback_rate?: 1.0, ... }
+9. "lottie": { type: "lottie", name, x, y, width, height, src: "<inline Bodymovin JSON string or https:// URL>", loop_animation?: true, speed?: 1.0, ... }
+10. "container": { type: "container", name, x, y, width, height, background?, radius?, clip?, clip_feather?, cascade_opacity?, layout?: { direction?: "row"|"column", gap?, padding? }, children: [...], ... }
 
 Animations array item format:
 { "property": "x"|"y"|"width"|"height"|"opacity"|"scale"|"scale_x"|"scale_y"|"rotation"|"skew_x"|"r"|"radius"|"color"|"border_color", "from"?: <num|hex>, "to"?: <num|hex>, "expr"?: "<math expr with t>", "start_sec"?: <num>, "end_sec"?: <num>, "easing"?: "linear"|"ease_in"|"ease_out"|"ease_in_out"|"ease_out_expo"|"ease_out_back"|"ease_out_bounce"|"spring", "repeat"?: number|"infinite", "yoyo"?: boolean }

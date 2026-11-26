@@ -456,8 +456,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 onChange={(e) => update({ font_weight: e.target.value })}
                 className="w-full bg-[#171820] border border-[#2C2D39] rounded px-2 py-1 text-xs text-[#E4E4E7] focus:outline-none focus:border-[#F97316]"
               >
-                <option value="normal">Regular</option>
-                <option value="bold">Bold</option>
+                <option value="thin">Thin (100)</option>
+                <option value="light">Light (300)</option>
+                <option value="normal">Regular (400)</option>
+                <option value="medium">Medium (500)</option>
+                <option value="semibold">SemiBold (600)</option>
+                <option value="bold">Bold (700)</option>
+                <option value="extrabold">ExtraBold (800)</option>
+                <option value="black">Black (900)</option>
               </select>
             </div>
           </div>
@@ -473,6 +479,108 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <span>Upload Local Image</span>
             <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
           </label>
+        </div>
+      )}
+
+      {/* Advanced v0.5.1 Transform (scale_x/y, pivot_x/y) */}
+      <div className="space-y-2 pt-2 border-t border-[#22232E]">
+        <div className="text-[11px] font-semibold text-[#A1A1AA]">Scale &amp; Pivot</div>
+        <div className="grid grid-cols-2 gap-2">
+          <FieldNumber
+            label="Scale X"
+            value={layer.scale_x ?? 1}
+            step={0.05}
+            onChange={(v) => update({ scale_x: v })}
+          />
+          <FieldNumber
+            label="Scale Y"
+            value={layer.scale_y ?? 1}
+            step={0.05}
+            onChange={(v) => update({ scale_y: v })}
+          />
+          <FieldNumber
+            label="Pivot X"
+            value={layer.pivot_x ?? 0.5}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={(v) => update({ pivot_x: v })}
+          />
+          <FieldNumber
+            label="Pivot Y"
+            value={layer.pivot_y ?? 0.5}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={(v) => update({ pivot_y: v })}
+          />
+        </div>
+      </div>
+
+      {/* Container Clip Feather */}
+      {layer.type === 'container' && (
+        <div className="space-y-2 pt-2 border-t border-[#22232E]">
+          <div className="text-[11px] font-semibold text-[#A1A1AA]">Container Clip</div>
+          <FieldNumber
+            label="Clip Feather (px)"
+            value={layer.clip_feather ?? 0}
+            min={0}
+            max={100}
+            step={1}
+            onChange={(v) => update({ clip_feather: v, clip: v > 0 ? true : layer.clip })}
+          />
+        </div>
+      )}
+
+      {/* Lottie Controls */}
+      {layer.type === 'lottie' && (
+        <div className="space-y-2 pt-2 border-t border-[#22232E]">
+          <div className="text-[11px] font-semibold text-[#A1A1AA]">Lottie Animation</div>
+          <div className="grid grid-cols-2 gap-2">
+            <FieldNumber
+              label="Speed"
+              value={layer.speed ?? 1}
+              min={0.1}
+              max={5}
+              step={0.1}
+              onChange={(v) => update({ speed: v })}
+            />
+            <label className="flex items-center gap-2 pt-4 text-xs text-[#D4D4D8] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={layer.loop_animation ?? true}
+                onChange={(e) => update({ loop_animation: e.target.checked })}
+                className="accent-[#F97316]"
+              />
+              <span>Loop</span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Video Controls */}
+      {layer.type === 'video' && (
+        <div className="space-y-2 pt-2 border-t border-[#22232E]">
+          <div className="text-[11px] font-semibold text-[#A1A1AA]">Video Playback</div>
+          <div className="grid grid-cols-2 gap-2">
+            <FieldNumber
+              label="Playback Rate"
+              value={layer.playback_rate ?? 1}
+              min={0.1}
+              max={4}
+              step={0.1}
+              onChange={(v) => update({ playback_rate: v })}
+            />
+            <label className="flex items-center gap-2 pt-4 text-xs text-[#D4D4D8] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={layer.loop ?? true}
+                onChange={(e) => update({ loop: e.target.checked })}
+                className="accent-[#F97316]"
+              />
+              <span>Loop</span>
+            </label>
+          </div>
         </div>
       )}
 

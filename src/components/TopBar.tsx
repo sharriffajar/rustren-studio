@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Download,
   FolderOpen,
+  HelpCircle,
   Redo2,
   Save,
   Undo2,
   AlertTriangle,
   CheckCircle2,
+  X,
 } from 'lucide-react';
 import type { ScenePreset } from '../engine/presets';
 
@@ -43,6 +45,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenLintTab,
   canvasLabel,
 }) => {
+  const [helpOpen, setHelpOpen] = useState(false);
   return (
     <header className="h-12 shrink-0 bg-[#121319] border-b border-[#252630] px-4 flex items-center justify-between gap-6 select-none">
       {/* Zone 1: Brand + Project Preset */}
@@ -159,8 +162,37 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
       </nav>
 
-      {/* Zone 3: Primary CTA */}
-      <div className="flex items-center shrink-0">
+      {/* Zone 3: Help & Primary CTA */}
+      <div className="flex items-center gap-2 shrink-0 relative">
+        <button
+          type="button"
+          onClick={() => setHelpOpen((v) => !v)}
+          title="Keyboard shortcuts & quick guide"
+          aria-label="Help and shortcuts"
+          className="p-1.5 rounded text-[#A1A1AA] hover:text-white bg-[#171820] hover:bg-[#23242F] border border-[#272834] transition-colors"
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+        </button>
+
+        {helpOpen && (
+          <div className="absolute right-0 top-10 z-50 w-72 rounded-lg bg-[#14151C] border border-[#2C2D3B] shadow-2xl p-3 text-xs text-[#D4D4D8] space-y-2">
+            <div className="flex items-center justify-between border-b border-[#252630] pb-1.5">
+              <span className="font-bold text-white">Rustren Studio Guide</span>
+              <button type="button" onClick={() => setHelpOpen(false)} className="text-[#8B8B96] hover:text-white">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <ul className="space-y-1 text-[11px] text-[#A1A1AA]">
+              <li><strong className="text-white">Space</strong> — Play / Pause timeline</li>
+              <li><strong className="text-white">← / →</strong> — Step 1 frame back / forward</li>
+              <li><strong className="text-white">Ctrl+Z / Ctrl+Shift+Z</strong> — Undo / Redo</li>
+              <li><strong className="text-white">Drag &amp; Drop</strong> — Open `.json` scene, `.html`, image, or Lottie `.json`</li>
+              <li><strong className="text-white">Annotate</strong> — Click or drag on frame to pin review notes for AI Director</li>
+              <li><strong className="text-white">Assets Tab</strong> — 56 free Backdrops, 3D Props, Video Loops &amp; CC0 Audio</li>
+            </ul>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={onOpenExport}
