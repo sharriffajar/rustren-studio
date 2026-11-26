@@ -112,7 +112,11 @@ function evalScalar(prop: unknown, frame: number, def: number): number {
 }
 
 function evalVec2(prop: unknown, frame: number, def: [number, number]): [number, number] {
-  const v = evalVecN(prop as Record<string, unknown> | undefined, frame, def);
+  const obj = prop as Record<string, unknown> | undefined;
+  if (obj && obj.s === true) {
+    return [evalScalar(obj.x, frame, def[0]), evalScalar(obj.y, frame, def[1])];
+  }
+  const v = evalVecN(obj, frame, def);
   return [v[0], v[1] ?? def[1]];
 }
 
@@ -236,6 +240,9 @@ export function renderLottieToCanvas(
   const frame = loopAnimation ? ip + (rawFrame % dur) : Math.min(ip + rawFrame, op - 0.001);
 
   ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.clip();
   ctx.scale(w / compW, h / compH);
 
   const layers = (doc.layers as Array<Record<string, unknown>>) || [];
