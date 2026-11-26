@@ -126,22 +126,22 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       <div
         role="tablist"
         aria-label="Sidebar mode"
-        className="h-9 shrink-0 bg-[#171820] border-b border-[#252630] px-2 flex items-center gap-1"
+        className="h-9 shrink-0 bg-[#171820] border-b border-[#252630] px-1.5 flex items-center gap-0.5"
       >
         <button
           role="tab"
           type="button"
           aria-selected={activeTab === 'layers'}
           onClick={() => onTabChange('layers')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap ${
+          className={`flex-1 flex items-center justify-center gap-1 px-1 py-1 text-[11px] font-semibold rounded transition-colors whitespace-nowrap ${
             activeTab === 'layers'
               ? 'bg-[#252633] text-white'
               : 'text-[#8B8B96] hover:text-[#E4E4E7]'
           }`}
         >
-          <Layers className="w-3.5 h-3.5" />
+          <Layers className="w-3 h-3 shrink-0" />
           <span>Layers</span>
-          <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
+          <span className="font-mono text-[9px] text-[#71717A] tabular-nums">
             {scene.layers.length}
           </span>
         </button>
@@ -151,13 +151,13 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           type="button"
           aria-selected={activeTab === 'assets'}
           onClick={() => onTabChange('assets')}
-          className={`flex-1 flex items-center justify-center gap-1 py-1 text-xs font-medium rounded transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-1 px-1 py-1 text-[11px] font-semibold rounded transition-colors whitespace-nowrap ${
             activeTab === 'assets'
               ? 'bg-[#252633] text-white'
-              : 'text-[#8B8B96] hover:text-[#D4D4D8]'
+              : 'text-[#8B8B96] hover:text-[#E4E4E7]'
           }`}
         >
-          <ImageIcon className="w-3.5 h-3.5" />
+          <ImageIcon className="w-3 h-3 shrink-0" />
           <span>Assets</span>
         </button>
 
@@ -166,13 +166,12 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           type="button"
           aria-selected={activeTab === 'json'}
           onClick={() => onTabChange('json')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap ${
+          className={`flex-1 flex items-center justify-center gap-1 px-1 py-1 text-[11px] font-semibold rounded transition-colors whitespace-nowrap ${
             activeTab === 'json'
               ? 'bg-[#252633] text-white'
               : 'text-[#8B8B96] hover:text-[#E4E4E7]'
           }`}
         >
-          <Code2 className="w-3.5 h-3.5" />
           <span>JSON</span>
         </button>
 
@@ -181,18 +180,18 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           type="button"
           aria-selected={activeTab === 'lint'}
           onClick={() => onTabChange('lint')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap ${
+          className={`flex-1 flex items-center justify-center gap-1 px-1 py-1 text-[11px] font-semibold rounded transition-colors whitespace-nowrap ${
             activeTab === 'lint'
               ? 'bg-[#252633] text-white'
               : 'text-[#8B8B96] hover:text-[#E4E4E7]'
           }`}
         >
           <AlertTriangle
-            className={`w-3.5 h-3.5 ${lintWarnings.length > 0 ? 'text-[#FBBF24]' : ''}`}
+            className={`w-3 h-3 shrink-0 ${lintWarnings.length > 0 ? 'text-[#FBBF24]' : ''}`}
           />
           <span>Lint</span>
           {lintWarnings.length > 0 && (
-            <span className="font-mono text-[10px] text-[#FBBF24] tabular-nums">
+            <span className="font-mono text-[9px] text-[#FBBF24] tabular-nums">
               {lintWarnings.length}
             </span>
           )}
@@ -442,6 +441,9 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                   );
                 })}
             </div>
+            {!catalogLoaded && (
+              <div className="text-center text-xs text-[#71717A] py-8">Loading studio assets...</div>
+            )}
             {catalogLoaded && catalogItems.length === 0 && (
               <div className="text-center text-xs text-[#71717A] py-8">No catalog assets found.</div>
             )}

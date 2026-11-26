@@ -796,8 +796,20 @@ export default function App() {
               return;
             }
             if (asset.kind === 'backdrop') {
-              commitScene({ ...scene, layers: [imgLayer, ...scene.layers] });
-              setSelectedLayerIndex(0);
+              const first = scene.layers[0];
+              const isSolidBg =
+                first &&
+                (first.type === 'rect' || first.type === 'svg') &&
+                (('width' in first && (first.width ?? 0) >= scene.canvas.width * 0.9 && (first.height ?? 0) >= scene.canvas.height * 0.9) ||
+                  /bg|backdrop|background/i.test(first.name || ''));
+              const insertIdx = isSolidBg ? 1 : 0;
+              const nextLayers = [
+                ...scene.layers.slice(0, insertIdx),
+                imgLayer,
+                ...scene.layers.slice(insertIdx),
+              ];
+              commitScene({ ...scene, layers: nextLayers });
+              setSelectedLayerIndex(insertIdx);
               showToast(`Backdrop added: ${asset.title}`);
               return;
             }

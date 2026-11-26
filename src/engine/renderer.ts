@@ -886,7 +886,7 @@ function renderLayerCore(
         }
         ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
       }
-    } else {
+    } else if (imageCache.get(layer.src) !== 'loading') {
       ctx.fillStyle = '#18181F';
       ctx.fillRect(-w / 2, -h / 2, w, h);
       ctx.strokeStyle = '#333340';
