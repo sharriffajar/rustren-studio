@@ -195,6 +195,7 @@ export async function runAiDirectorCommand(params: {
   apiKey: string;
   model: string;
   baseUrl?: string;
+  useCorsProxy?: boolean;
   prompt: string;
   mode: 'edit' | 'new';
   currentScene?: RustrenScene;
@@ -203,7 +204,7 @@ export async function runAiDirectorCommand(params: {
   /** Locally extracted video forensics, appended to the prompt as a structured block. */
   videoAnalysis?: VideoForensics;
 }): Promise<{ summary: string; scene: RustrenScene }> {
-  const { provider, apiKey, model, baseUrl, prompt, mode, currentScene } = params;
+  const { provider, apiKey, model, baseUrl, useCorsProxy, prompt, mode, currentScene } = params;
   const references = params.references ?? [];
   const referenceNote =
     references.length > 0
@@ -316,21 +317,38 @@ export async function runAiDirectorCommand(params: {
       ],
     };
     const useJsonFormat = provider === 'openai' || provider === 'openrouter';
-    let resp = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      signal: AbortSignal.timeout(90_000),
-      body: JSON.stringify(
-        useJsonFormat ? { ...baseBody, response_format: { type: 'json_object' } } : baseBody
-      ),
-    });
+    const shouldProxy =
+      provider === 'custom' &&
+      Boolean(useCorsProxy) &&
+      endpoint.startsWith('https://') &&
+      !/^https:\/\/(localhost|127\.0\.0\.1)/i.test(endpoint);
+    const proxyUrl = 'https://nvm.web.id/rustren/api/llm-proxy';
+
+    const sendChat = (payloadBody: Record<string, unknown>) =>
+      shouldProxy
+        ? fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(90_000),
+            body: JSON.stringify({
+              target_url: endpoint,
+              api_key: apiKey.trim(),
+              body: payloadBody,
+            }),
+          })
+        : fetch(endpoint, {
+            method: 'POST',
+            headers,
+            signal: AbortSignal.timeout(90_000),
+            body: JSON.stringify(payloadBody),
+          });
+
+    let resp = await sendChat(
+      useJsonFormat ? { ...baseBody, response_format: { type: 'json_object' } } : baseBody
+    );
     if (useJsonFormat && resp.status === 400) {
       // Some OpenRouter models reject response_format; retry once without it
-      resp = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(baseBody),
-      });
+      resp = await sendChat(baseBody);
     }
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
@@ -351,8 +369,9 @@ export async function testAiConnection(params: {
   apiKey: string;
   model: string;
   baseUrl?: string;
+  useCorsProxy?: boolean;
 }): Promise<{ ok: boolean; latencyMs: number; message: string }> {
-  const { provider, apiKey, model, baseUrl } = params;
+  const { provider, apiKey, model, baseUrl, useCorsProxy } = params;
   const t0 = performance.now();
 
   try {
@@ -414,15 +433,33 @@ export async function testAiConnection(params: {
     if (apiKey.trim()) {
       headers['Authorization'] = `Bearer ${apiKey.trim()}`;
     }
-    const resp = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: model || 'gpt-4o-mini',
-        max_tokens: 4,
-        messages: [{ role: 'user', content: 'ping' }],
-      }),
-    });
+    const pingBody = {
+      model: model || 'gpt-4o-mini',
+      max_tokens: 4,
+      messages: [{ role: 'user', content: 'ping' }],
+    };
+    const shouldProxy =
+      provider === 'custom' &&
+      Boolean(useCorsProxy) &&
+      endpoint.startsWith('https://') &&
+      !/^https:\/\/(localhost|127\.0\.0\.1)/i.test(endpoint);
+    const resp = shouldProxy
+      ? await fetch('https://nvm.web.id/rustren/api/llm-proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(20_000),
+          body: JSON.stringify({
+            target_url: endpoint,
+            api_key: apiKey.trim(),
+            body: pingBody,
+          }),
+        })
+      : await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          signal: AbortSignal.timeout(20_000),
+          body: JSON.stringify(pingBody),
+        });
     const latencyMs = Math.round(performance.now() - t0);
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));

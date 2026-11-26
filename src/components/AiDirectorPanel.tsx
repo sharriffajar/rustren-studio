@@ -153,6 +153,7 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
       apiKey: config.apiKey,
       model: config.model,
       baseUrl: config.baseUrl,
+      useCorsProxy: config.useCorsProxy,
     });
     setTestResult({ ok: res.ok, message: res.message });
     setTestBusy(false);
@@ -384,6 +385,15 @@ export const AiDirectorPanel: React.FC<AiDirectorPanelProps> = ({
                   placeholder="http://localhost:11434/v1"
                   className="w-full bg-[#0F1016] border border-[#2C2D39] rounded px-2 py-1 font-mono text-[11px] text-white focus:outline-none focus:border-[#F97316]"
                 />
+                <label className="flex items-center gap-2 pt-1 text-[11px] text-[#A1A1AA] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={config.useCorsProxy ?? true}
+                    onChange={(e) => onUpdateConfig({ useCorsProxy: e.target.checked })}
+                    className="accent-[#F97316] rounded"
+                  />
+                  <span>Use Studio CORS Proxy (for non-CORS https:// APIs)</span>
+                </label>
               </div>
             )}
 

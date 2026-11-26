@@ -464,6 +464,7 @@ export interface AiProviderConfig {
   apiKey: string;
   model: string;
   baseUrl: string;
+  useCorsProxy?: boolean;
   rememberKey: boolean;
   autoRenderAfterAi: boolean;
   autoRenderFormat: 'mp4' | 'webm' | 'png';
