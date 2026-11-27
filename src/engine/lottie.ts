@@ -4,6 +4,34 @@
  */
 
 const lottieCache = new Map<string, Record<string, unknown> | 'loading' | 'error'>();
+const lottieImageCache = new Map<string, HTMLImageElement | 'loading' | 'error'>();
+
+function getCachedLottieImage(src: string): HTMLImageElement | null {
+  if (!src || typeof Image === 'undefined') return null;
+  const cached = lottieImageCache.get(src);
+  if (cached && typeof cached !== 'string') {
+    return cached.complete && cached.naturalWidth > 0 ? cached : null;
+  }
+  if (cached === 'loading' || cached === 'error') return null;
+
+  const img = new Image();
+  if (!src.startsWith('data:')) {
+    img.crossOrigin = 'anonymous';
+  }
+  lottieImageCache.set(src, 'loading');
+  img.onload = () => {
+    lottieImageCache.set(src, img);
+  };
+  img.onerror = () => {
+    lottieImageCache.set(src, 'error');
+  };
+  img.src = src;
+  if (img.complete && img.naturalWidth > 0) {
+    lottieImageCache.set(src, img);
+    return img;
+  }
+  return null;
+}
 
 export function getCachedLottie(
   src: string,
@@ -226,6 +254,91 @@ function renderShapes(
   ctx.restore();
 }
 
+
+function applyParentChain(
+  ctx: CanvasRenderingContext2D,
+  layer: Record<string, unknown>,
+  allLayers: Array<Record<string, unknown>>,
+  frame: number
+): number {
+  const chain: Array<Record<string, unknown>> = [layer];
+  let cur: Record<string, unknown> = layer;
+  for (let depth = 0; depth < 16; depth++) {
+    const parentInd = cur.parent;
+    if (typeof parentInd !== 'number') break;
+    const parentLayer = allLayers.find((l) => l.ind === parentInd);
+    if (!parentLayer) break;
+    chain.push(parentLayer);
+    cur = parentLayer;
+  }
+  for (let i = chain.length - 1; i >= 0; i--) {
+    applyKs(ctx, chain[i].ks as Record<string, unknown> | undefined, frame);
+  }
+  const ks = layer.ks as Record<string, unknown> | undefined;
+  return ks ? Math.max(0, Math.min(1, evalScalar(ks.o, frame, 100) / 100)) : 1;
+}
+
+function renderLayerList(
+  ctx: CanvasRenderingContext2D,
+  layers: Array<Record<string, unknown>>,
+  assets: Array<Record<string, unknown>>,
+  frame: number,
+  parentOpacity: number,
+  compW: number,
+  compH: number
+): void {
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const l = layers[i];
+    if (l.hd) continue;
+    const lip = Number(l.ip ?? 0);
+    const lop = Number(l.op ?? 1e9);
+    if (frame < lip || frame >= lop) continue;
+
+    ctx.save();
+    const lOp = applyParentChain(ctx, l, layers, frame);
+    const finalOp = parentOpacity * lOp;
+    if (finalOp > 0.001) {
+      if (l.ty === 4 && Array.isArray(l.shapes)) {
+        renderShapes(ctx, l.shapes as Array<Record<string, unknown>>, frame, finalOp);
+      } else if (l.ty === 1 && typeof l.sc === 'string') {
+        ctx.globalAlpha = finalOp;
+        ctx.fillStyle = l.sc;
+        ctx.fillRect(0, 0, Number(l.sw) || compW, Number(l.sh) || compH);
+      } else if (l.ty === 2 && typeof l.refId === 'string') {
+        const asset = assets.find((a) => a.id === l.refId);
+        if (asset && typeof asset.p === 'string' && asset.p.length > 0) {
+          const u = typeof asset.u === 'string' ? asset.u : '';
+          const imgSrc = asset.p.startsWith('data:') ? asset.p : `${u}${asset.p}`;
+          const img = getCachedLottieImage(imgSrc);
+          if (img) {
+            ctx.globalAlpha = finalOp;
+            const tw = Number(asset.w) || img.naturalWidth;
+            const th = Number(asset.h) || img.naturalHeight;
+            ctx.drawImage(img, 0, 0, tw, th);
+          }
+        }
+      } else if (l.ty === 0 && typeof l.refId === 'string') {
+        const comp = assets.find((a) => a.id === l.refId);
+        if (comp && Array.isArray(comp.layers)) {
+          const st = Number(l.st ?? 0);
+          const sr = Math.max(0.001, Number(l.sr ?? 1));
+          const subFrame = (frame - st) / sr;
+          renderLayerList(
+            ctx,
+            comp.layers as Array<Record<string, unknown>>,
+            assets,
+            subFrame,
+            finalOp,
+            Number(comp.w) || compW,
+            Number(comp.h) || compH
+          );
+        }
+      }
+    }
+    ctx.restore();
+  }
+}
+
 export function renderLottieToCanvas(
   ctx: CanvasRenderingContext2D,
   doc: Record<string, unknown>,
@@ -251,28 +364,9 @@ export function renderLottieToCanvas(
   ctx.clip();
   ctx.scale(w / compW, h / compH);
 
+  const assets = (doc.assets as Array<Record<string, unknown>>) || [];
   const layers = (doc.layers as Array<Record<string, unknown>>) || [];
-  for (let i = layers.length - 1; i >= 0; i--) {
-    const l = layers[i];
-    if (l.hd) continue;
-    const lip = Number(l.ip ?? 0);
-    const lop = Number(l.op ?? 1e9);
-    if (frame < lip || frame >= lop) continue;
-
-    ctx.save();
-    const lOp = applyKs(ctx, l.ks as Record<string, unknown> | undefined, frame);
-    const finalOp = opacity * lOp;
-    if (finalOp > 0.001) {
-      if (l.ty === 4 && Array.isArray(l.shapes)) {
-        renderShapes(ctx, l.shapes as Array<Record<string, unknown>>, frame, finalOp);
-      } else if (l.ty === 1 && typeof l.sc === 'string') {
-        ctx.globalAlpha = finalOp;
-        ctx.fillStyle = l.sc;
-        ctx.fillRect(0, 0, Number(l.sw) || compW, Number(l.sh) || compH);
-      }
-    }
-    ctx.restore();
-  }
+  renderLayerList(ctx, layers, assets, frame, opacity, compW, compH);
 
   ctx.restore();
 }
